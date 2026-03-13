@@ -1,0 +1,43 @@
+name: SMPStart
+version: 1.0.0
+main: com.muzlik.smpstart.SMPStartPlugin
+author: muzlik
+authors: [muzlik]
+description: A coordinated launch system for Minecraft SMP servers with countdown, border management, and player notifications
+website: https://github.com/muzlik/smp-start-plugin
+api-version: 1.19
+load: STARTUP
+depend: []
+softdepend: []
+
+commands:
+  smpstart:
+    description: Start the SMP countdown sequence
+    usage: /<command>
+    permission: smpstart.use
+    permission-message: "§cYou don't have permission to start the SMP countdown!"
+    aliases: [start, begin]
+  smpconfig:
+    description: Configure SMP start settings
+    usage: /<command> <setting> [value]
+    permission: smpstart.config
+    permission-message: "§cYou don't have permission to configure SMP settings!"
+    aliases: [smpset, smpsettings]
+
+permissions:
+  smpstart.*:
+    description: Gives access to all SMP Start Plugin commands
+    default: op
+    children:
+      smpstart.use: true
+      smpstart.config: true
+      smpstart.admin: true
+  smpstart.use:
+    description: Allows use of /smpstart command
+    default: op
+  smpstart.config:
+    description: Allows configuration of plugin settings
+    default: op
+  smpstart.admin:
+    description: Allows access to admin features and detailed error messages
+    default: op

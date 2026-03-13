@@ -1,0 +1,25 @@
+# SMP Start Plugin Configuration
+
+# Countdown duration in seconds (how long the countdown lasts)
+countdown-duration: 10
+
+# Cooldown duration in seconds (how long before /smpstart can be used again)
+cooldown-duration: 10
+
+# World border size before SMP starts (in blocks)
+pre-start-border-size: 10
+
+# World border size after SMP starts (in blocks)
+final-border-size: 10000.0
+
+# Whether to send join reminders to offline OP players
+join-reminders-enabled: true
+
+# How often to send reminders in seconds
+reminder-interval: 30
+
+# Enable debug logging (shows additional information in console)
+debug: false
+
+# PvP protection duration in minutes after SMP starts (0 to disable)
+pvp-protection-duration: 1
