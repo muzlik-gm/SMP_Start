@@ -94,7 +94,7 @@ public class ReminderSystemImpl implements ReminderSystem, Listener {
             }
             
             // Send reminder message to online players about offline OPs
-            String message = ChatColor.YELLOW + "[SMP] Waiting for OP players: ";
+            String message = ChatColor.YELLOW + "[MSS] Waiting for OP players to join: ";
             StringBuilder opNames = new StringBuilder();
             
             for (OfflinePlayer op : offlineOPs) {
@@ -169,7 +169,12 @@ public class ReminderSystemImpl implements ReminderSystem, Listener {
                 plugin.getLogger().info("OP player " + player.getName() + " joined. Current state: " + plugin.getStateManager().getCurrentState());
                 
                 // Send welcome message with commands if SMP hasn't started yet
-                if (plugin.getStateManager().getCurrentState() == PluginState.IDLE) {
+                boolean smpStarted = false;
+                if (plugin.getStateManager() instanceof com.muzlik.smpstart.state.StateManagerImpl) {
+                    smpStarted = ((com.muzlik.smpstart.state.StateManagerImpl) plugin.getStateManager()).getStateData().isSmpStarted();
+                }
+                
+                if (plugin.getStateManager().getCurrentState() == PluginState.IDLE && !smpStarted) {
                     plugin.getLogger().info("Sending admin welcome message to " + player.getName());
                     sendAdminWelcomeMessage(player);
                 }
@@ -179,8 +184,8 @@ public class ReminderSystemImpl implements ReminderSystem, Listener {
                     stopReminderForPlayer(player);
                     
                     // Announce that the OP has joined
-                    String message = ChatColor.GREEN + "[SMP] OP player " + ChatColor.WHITE + player.getName() + 
-                                   ChatColor.GREEN + " has joined the server!";
+                    String message = ChatColor.GREEN + "[MSS] " + ChatColor.WHITE + player.getName() +
+                                   ChatColor.GREEN + " has joined — all OPs are online!";
                     Bukkit.broadcastMessage(message);
                 }
             }
@@ -192,20 +197,17 @@ public class ReminderSystemImpl implements ReminderSystem, Listener {
      * @param player the admin player
      */
     private void sendAdminWelcomeMessage(Player player) {
-        player.sendMessage("");
-        player.sendMessage(ChatColor.GOLD + "=== SMP Start Plugin - Admin Commands ===");
-        player.sendMessage(ChatColor.YELLOW + "/smpstart" + ChatColor.WHITE + " - Start the SMP countdown");
-        player.sendMessage(ChatColor.YELLOW + "/smpconfig help" + ChatColor.WHITE + " - Show all configuration options");
-        player.sendMessage(ChatColor.YELLOW + "/smpconfig status" + ChatColor.WHITE + " - Show current plugin status");
-        player.sendMessage("");
-        player.sendMessage(ChatColor.GREEN + "Current Border: " + ChatColor.WHITE + 
-                          plugin.getConfigManager().getPreStartBorderSize() + " blocks → " + 
-                          plugin.getConfigManager().getFinalBorderSize() + " blocks");
-        player.sendMessage(ChatColor.GREEN + "Countdown Duration: " + ChatColor.WHITE + 
-                          plugin.getConfigManager().getCountdownDuration() + " seconds");
-        player.sendMessage("");
-        player.sendMessage(ChatColor.AQUA + "Use /smpstart when ready to begin the SMP!");
-        player.sendMessage("");
+        player.sendMessage(ChatColor.GOLD + "--- Muzlik's SMP Starter ---");
+        player.sendMessage(ChatColor.YELLOW + "/smp start" + ChatColor.GRAY + " - begin the countdown");
+        player.sendMessage(ChatColor.YELLOW + "/smp status" + ChatColor.GRAY + " - view current status");
+        player.sendMessage(ChatColor.YELLOW + "/smp config" + ChatColor.GRAY + " - open the interactive config menu");
+        player.sendMessage(ChatColor.YELLOW + "/smp menu" + ChatColor.GRAY + " - open the menu directly");
+        player.sendMessage(ChatColor.YELLOW + "/smp help" + ChatColor.GRAY + " - full command list");
+        player.sendMessage(ChatColor.WHITE + "Border: " + ChatColor.GRAY
+                + plugin.getConfigManager().getPreStartBorderSize() + " -> "
+                + plugin.getConfigManager().getFinalBorderSize() + " blocks"
+                + ChatColor.WHITE + "  |  Countdown: " + ChatColor.GRAY
+                + plugin.getConfigManager().getCountdownDuration() + "s");
     }
     
     /**

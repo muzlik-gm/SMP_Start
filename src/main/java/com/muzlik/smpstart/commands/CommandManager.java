@@ -4,34 +4,19 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.TabCompleter;
 
 /**
- * Manages all plugin commands
+ * Manages all plugin commands under the /smp root command.
  */
 public interface CommandManager extends CommandExecutor, TabCompleter {
-    
+
     /**
-     * Register all plugin commands
+     * Register the /smp command and all subcommands with Bukkit.
      */
     void registerCommands();
-    
+
     /**
-     * Handle the /smpstart command
-     * @param sender command sender
-     * @param args command arguments
-     * @return true if command was handled
-     */
-    boolean handleSMPStartCommand(org.bukkit.command.CommandSender sender, String[] args);
-    
-    /**
-     * Handle configuration commands
-     * @param sender command sender
-     * @param args command arguments
-     * @return true if command was handled
-     */
-    boolean handleConfigCommand(org.bukkit.command.CommandSender sender, String[] args);
-    
-    /**
-     * Show help information to the sender
-     * @param sender command sender
+     * Display the help menu to the sender.
+     *
+     * @param sender the command sender
      */
     void showHelp(org.bukkit.command.CommandSender sender);
 }

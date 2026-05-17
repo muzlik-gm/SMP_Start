@@ -9,6 +9,7 @@ import com.muzlik.smpstart.reminders.ReminderSystem;
 import com.muzlik.smpstart.reminders.ReminderSystemImpl;
 import com.muzlik.smpstart.state.StateManager;
 import com.muzlik.smpstart.state.StateManagerImpl;
+import com.muzlik.smpstart.state.StateManager.PluginState;
 import com.muzlik.smpstart.border.BorderManager;
 import com.muzlik.smpstart.border.BorderManagerImpl;
 import com.muzlik.smpstart.commands.CommandManager;
@@ -17,14 +18,15 @@ import com.muzlik.smpstart.pvp.PvPManager;
 import com.muzlik.smpstart.pvp.PvPManagerImpl;
 import com.muzlik.smpstart.persistence.DataManager;
 import com.muzlik.smpstart.persistence.DataManagerImpl;
+import com.muzlik.smpstart.menu.ConfigMenuManager;
 import com.muzlik.smpstart.protection.BlockProtectionManager;
 import com.muzlik.smpstart.protection.BlockProtectionManagerImpl;
 import com.muzlik.smpstart.utils.ErrorHandler;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Main plugin class for SMP Start Plugin
- * Provides coordinated launch system for Minecraft SMP servers
+ * Main plugin class for Muzlik's SMP Starter.
+ * Provides a coordinated launch system for Minecraft SMP servers.
  */
 public class SMPStartPlugin extends JavaPlugin {
     
@@ -37,16 +39,17 @@ public class SMPStartPlugin extends JavaPlugin {
     private PvPManager pvpManager;
     private DataManager dataManager;
     private BlockProtectionManager blockProtectionManager;
+    private ConfigMenuManager configMenuManager;
     private ErrorHandler errorHandler;
     
     @Override
     public void onEnable() {
-        getLogger().info("SMP Start Plugin is enabling...");
+        getLogger().info("Muzlik's SMP Starter is enabling...");
         
         try {
             // Initialize error handler first
             errorHandler = new ErrorHandler(this);
-            errorHandler.logInfo("Startup", "Initializing SMP Start Plugin...");
+            errorHandler.logInfo("Startup", "Initializing Muzlik's SMP Starter...");
             
             // Initialize managers in dependency order
             errorHandler.logInfo("Startup", "Initializing configuration manager...");
@@ -76,6 +79,9 @@ public class SMPStartPlugin extends JavaPlugin {
             errorHandler.logInfo("Startup", "Initializing block protection manager...");
             blockProtectionManager = new BlockProtectionManagerImpl(this);
             
+            errorHandler.logInfo("Startup", "Initializing config menu manager...");
+            configMenuManager = new ConfigMenuManager(this);
+            
             // Register commands
             errorHandler.logInfo("Startup", "Registering commands...");
             commandManager.registerCommands();
@@ -90,23 +96,32 @@ public class SMPStartPlugin extends JavaPlugin {
             errorHandler.requireNonNull(pvpManager, "PvPManager");
             errorHandler.requireNonNull(dataManager, "DataManager");
             errorHandler.requireNonNull(blockProtectionManager, "BlockProtectionManager");
+            errorHandler.requireNonNull(configMenuManager, "ConfigMenuManager");
             
             // Load saved state if exists
             errorHandler.logInfo("Startup", "Loading saved state...");
             loadSavedState();
             
+            // Resume countdown/cooldown timers if needed
+            if (stateManager instanceof StateManagerImpl) {
+                ((StateManagerImpl) stateManager).resumeStateAfterLoad();
+            }
+            
             // Initialize world border to pre-start size on plugin startup
             errorHandler.logInfo("Startup", "Setting initial world border...");
             initializeWorldBorder();
             
-            errorHandler.logInfo("Startup", "SMP Start Plugin enabled successfully!");
-            errorHandler.logInfo("Startup", "Plugin is ready to use. Use /smpstart to begin countdown.");
+            // Start join reminders if appropriate (SMP not started and idle)
+            startJoinRemindersIfNeeded();
+            
+            errorHandler.logInfo("Startup", "Muzlik's SMP Starter enabled successfully!");
+            errorHandler.logInfo("Startup", "Plugin ready. Use /smp start to begin the countdown.");
             
         } catch (Exception e) {
             if (errorHandler != null) {
                 errorHandler.handleException("Plugin Startup", e);
             } else {
-                getLogger().severe("Failed to enable SMP Start Plugin: " + e.getMessage());
+                getLogger().severe("Failed to enable Muzlik's SMP Starter: " + e.getMessage());
                 e.printStackTrace();
             }
             // Disable the plugin if initialization fails
@@ -116,7 +131,7 @@ public class SMPStartPlugin extends JavaPlugin {
     
     @Override
     public void onDisable() {
-        getLogger().info("SMP Start Plugin is disabling...");
+        getLogger().info("Muzlik's SMP Starter is disabling...");
         
         try {
             // Cleanup resources in reverse order
@@ -162,9 +177,9 @@ public class SMPStartPlugin extends JavaPlugin {
             }
             
             if (errorHandler != null) {
-                errorHandler.logInfo("Shutdown", "SMP Start Plugin disabled successfully!");
+                errorHandler.logInfo("Shutdown", "Muzlik's SMP Starter disabled successfully!");
             } else {
-                getLogger().info("SMP Start Plugin disabled successfully!");
+                getLogger().info("Muzlik's SMP Starter disabled successfully!");
             }
             
         } catch (Exception e) {
@@ -212,6 +227,10 @@ public class SMPStartPlugin extends JavaPlugin {
     
     public BlockProtectionManager getBlockProtectionManager() {
         return blockProtectionManager;
+    }
+    
+    public ConfigMenuManager getConfigMenuManager() {
+        return configMenuManager;
     }
     
     /**
@@ -301,5 +320,33 @@ public class SMPStartPlugin extends JavaPlugin {
         } catch (Exception e) {
             errorHandler.handleException("State Loading", e);
         }
+    }
+    
+    /**
+     * Start join reminders only when SMP hasn't started and the plugin is idle
+     */
+    private void startJoinRemindersIfNeeded() {
+        if (reminderSystem == null || configManager == null || stateManager == null) {
+            return;
+        }
+        
+        if (!configManager.areJoinRemindersEnabled()) {
+            return;
+        }
+        
+        if (!(stateManager instanceof StateManagerImpl)) {
+            return;
+        }
+        
+        StateData stateData = ((StateManagerImpl) stateManager).getStateData();
+        if (stateData.isSmpStarted()) {
+            return;
+        }
+        
+        if (stateManager.getCurrentState() != PluginState.IDLE) {
+            return;
+        }
+        
+        reminderSystem.startReminders();
     }
 }

@@ -3,14 +3,28 @@ package com.muzlik.smpstart.protection;
 import com.muzlik.smpstart.SMPStartPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
+import com.muzlik.smpstart.state.StateManagerImpl;
+import org.bukkit.entity.Projectile;
+import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.entity.Entity;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Implementation of BlockProtectionManager that prevents block interactions before SMP starts
@@ -19,6 +33,8 @@ public class BlockProtectionManagerImpl implements BlockProtectionManager, Liste
     
     private final SMPStartPlugin plugin;
     private boolean blockProtectionActive = true; // Start with protection enabled
+    private static final long SPAWN_PROTECTION_TICKS = 100L;
+    private final Set<UUID> spawnProtectedPlayers = new HashSet<>();
     
     public BlockProtectionManagerImpl(SMPStartPlugin plugin) {
         this.plugin = plugin;
@@ -32,7 +48,7 @@ public class BlockProtectionManagerImpl implements BlockProtectionManager, Liste
         plugin.getLogger().info("Block protection enabled - players cannot break/place blocks");
         
         // Notify all online players
-        String message = ChatColor.YELLOW + "[SMP] " + ChatColor.RED + 
+        String message = ChatColor.YELLOW + "[MSS] " + ChatColor.RED +
                         "Block breaking/placing is disabled until the SMP starts!";
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.sendMessage(message);
@@ -45,7 +61,7 @@ public class BlockProtectionManagerImpl implements BlockProtectionManager, Liste
         plugin.getLogger().info("Block protection disabled - players can now break/place blocks");
         
         // Notify all online players
-        String message = ChatColor.YELLOW + "[SMP] " + ChatColor.GREEN + 
+        String message = ChatColor.YELLOW + "[MSS] " + ChatColor.GREEN +
                         "Block breaking/placing is now enabled! The SMP has begun!";
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.sendMessage(message);
@@ -186,5 +202,153 @@ public class BlockProtectionManagerImpl implements BlockProtectionManager, Liste
                 // Allow other inventory types (player inventory, crafting, etc.)
                 break;
         }
+    }
+    
+    /**
+     * Ensure players don't spawn outside the border before SMP starts
+     */
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> ensureInsideBorder(player, "join"), 1L);
+    }
+    
+    @EventHandler
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        if (!isPreStart()) {
+            return;
+        }
+        
+        if (!isTargetWorld(player.getWorld())) {
+            return;
+        }
+        
+        WorldBorder border = player.getWorld().getWorldBorder();
+        if (border != null && !border.isInside(event.getRespawnLocation())) {
+            Location safeLocation = getSafeLocation(player, border);
+            if (safeLocation != null) {
+                event.setRespawnLocation(safeLocation);
+                Bukkit.getScheduler().runTaskLater(plugin, () -> applyTemporaryInvulnerability(player), 1L);
+            }
+        }
+    }
+    
+    /**
+     * Prevent mob damage during pre-start phase (and optionally after start)
+     */
+    @EventHandler
+    public void onMobDamagePlayer(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player)) {
+            return;
+        }
+        
+        Player player = (Player) event.getEntity();
+        if (!isTargetWorld(player.getWorld())) {
+            return;
+        }
+        
+        if (!isMobDamageDisabledForPhase()) {
+            return;
+        }
+        
+        if (isPlayerDamager(event.getDamager())) {
+            return;
+        }
+        
+        event.setCancelled(true);
+    }
+    
+    private void ensureInsideBorder(Player player, String reason) {
+        if (!isPreStart() || player == null || !player.isOnline()) {
+            return;
+        }
+        
+        if (!isTargetWorld(player.getWorld())) {
+            return;
+        }
+        
+        WorldBorder border = player.getWorld().getWorldBorder();
+        if (border == null) {
+            return;
+        }
+        
+        if (border.isInside(player.getLocation())) {
+            return;
+        }
+        
+        Location safeLocation = getSafeLocation(player, border);
+        if (safeLocation == null) {
+            return;
+        }
+        
+        player.teleport(safeLocation);
+        applyTemporaryInvulnerability(player);
+        plugin.getLogger().info("Teleported " + player.getName() + " inside the border (" + reason + ")");
+    }
+    
+    private Location getSafeLocation(Player player, WorldBorder border) {
+        World world = player.getWorld();
+        Location spawn = world.getSpawnLocation();
+        if (border.isInside(spawn)) {
+            return spawn;
+        }
+        
+        Location center = border.getCenter();
+        int x = center.getBlockX();
+        int z = center.getBlockZ();
+        int y = world.getHighestBlockYAt(x, z) + 1;
+        if (y < world.getMinHeight()) {
+            y = world.getMinHeight();
+        }
+        return new Location(world, x + 0.5, y, z + 0.5);
+    }
+    
+    private void applyTemporaryInvulnerability(Player player) {
+        if (player.isInvulnerable()) {
+            return;
+        }
+        player.setInvulnerable(true);
+        spawnProtectedPlayers.add(player.getUniqueId());
+        
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline() && spawnProtectedPlayers.remove(player.getUniqueId())) {
+                player.setInvulnerable(false);
+            }
+        }, SPAWN_PROTECTION_TICKS);
+    }
+    
+    private boolean isPreStart() {
+        if (plugin.getStateManager() instanceof StateManagerImpl) {
+            return !((StateManagerImpl) plugin.getStateManager()).getStateData().isSmpStarted();
+        }
+        return true;
+    }
+    
+    private boolean isTargetWorld(World world) {
+        String targetWorld = plugin.getConfigManager().getWorldName();
+        if (targetWorld != null && !targetWorld.trim().isEmpty()) {
+            return world.getName().equalsIgnoreCase(targetWorld.trim());
+        }
+        return true;
+    }
+    
+    private boolean isMobDamageDisabledForPhase() {
+        boolean started = !isPreStart();
+        if (started) {
+            return plugin.getConfigManager().isStartedDisableMobDamage();
+        }
+        return plugin.getConfigManager().isStartingDisableMobDamage();
+    }
+    
+    private boolean isPlayerDamager(Entity damager) {
+        if (damager instanceof Player) {
+            return true;
+        }
+        if (damager instanceof Projectile) {
+            ProjectileSource source = ((Projectile) damager).getShooter();
+            return source instanceof Player;
+        }
+        return false;
     }
 }

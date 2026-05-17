@@ -1,91 +1,152 @@
-# SMP Start Plugin
+# Muzlik's SMP Starter
 
-A coordinated launch system for Minecraft SMP servers with countdown, border management, and player notifications.
+A coordinated launch system for Minecraft SMP servers with balanced early-game defaults, phase-based safety, and deep customization.
 
 ## Features
 
 - **Countdown System**: Multi-second countdown with audio and visual effects
-- **World Border Management**: Automatic border resizing during SMP start
+- **Countdown Boss Bar**: On-screen countdown progress bar
+- **World Border Management**: Automatic border resizing on SMP start
+- **Phase Controls**: Pre-start vs post-start difficulty and mob rules
 - **Join Reminders**: Automated reminders for offline OP players
-- **Command-based Configuration**: No file editing required
-- **Comprehensive Effects**: Sounds, titles, and chat messages
-- **Cooldown System**: Prevents spam usage of start command
+- **PvP Protection**: Temporary PvP disable window after SMP starts
+- **Block Protection**: Prevents non-OP block interactions before SMP start
+- **Spawn Safety**: Teleports players inside the border pre-start
+- **Mob Safety**: Optional pre-start mob spawning and damage disable
+- **Border Controls**: Transition timing and damage settings per phase
+- **Minimum Player Gate**: Require a minimum number of players to start
+- **Cooldown System**: Prevents spam usage of the start command
 
 ## Commands
 
-### `/smpstart`
+All commands are under the `/smp` root. Aliases: `/smpstart`, `/msmp`.
+
+### `/smp start`
 Starts the SMP countdown sequence.
 - **Permission**: `smpstart.use`
-- **Aliases**: `/start`, `/begin`
 
-### `/smpconfig <setting> [value]`
-Configure plugin settings.
+### `/smp cancel`
+Cancels the active countdown.
+- **Permission**: `smpstart.cancel`
+
+### `/smp reset`
+Resets the SMP back to pre-start state and teleports players to spawn.
+- **Permission**: `smpstart.reset`
+
+### `/smp reload`
+Reloads plugin configuration.
+- **Permission**: `smpstart.reload`
+
+### `/smp status`
+Shows current plugin state and configuration.
+- **Permission**: `smpstart.use`
+
+### `/smp menu`
+Opens the interactive SMP starter control menu.
+- **Permission**: `smpstart.use`
+
+### `/smp config <key> [value]`
+View or change a configuration setting. Use `/smp config` with no arguments in-game to open the interactive config menu.
 - **Permission**: `smpstart.config`
-- **Aliases**: `/smpset`, `/smpsettings`
 
-#### Configuration Options:
-- `countdown <seconds>` - Set countdown duration
-- `cooldown <seconds>` - Set cooldown duration  
-- `preborder <size>` - Set pre-start border size
-- `finalborder <size>` - Set final border size
-- `reminders <true|false>` - Enable/disable join reminders
-- `status` - Show current configuration
-- `help` - Show help information
+#### Configuration Keys:
+| Key | Description |
+| --- | --- |
+| `countdown <seconds>` | Countdown duration |
+| `cooldown <seconds>` | Cooldown duration |
+| `preborder <blocks>` | Pre-start border size |
+| `finalborder <blocks>` | Final border size |
+| `pvp <minutes>` | PvP protection duration |
+| `minplayers <count>` | Minimum online players to start |
+| `reminders <true\|false>` | Enable/disable join reminders |
+| `reminderinterval <seconds>` | Reminder interval |
+| `bossbar <true\|false>` | Toggle countdown boss bar |
+| `bordercenter <spawn\|fixed>` | Border center mode |
+| `bordercenterpos <x> <z>` | Fixed border center coordinates |
+| `world <name\|default>` | Target world for border/PvP |
+
+### `/smp help`
+Shows the full command list.
 
 ## Permissions
 
-- `smpstart.*` - Access to all plugin features
-- `smpstart.use` - Use the `/smpstart` command
-- `smpstart.config` - Configure plugin settings
-- `smpstart.admin` - Access admin features and detailed error messages
+| Permission | Description |
+| --- | --- |
+| `smpstart.*` | All permissions |
+| `smpstart.use` | Use `/smp start` and `/smp status` |
+| `smpstart.config` | Configure settings |
+| `smpstart.cancel` | Cancel an active countdown |
+| `smpstart.reload` | Reload plugin configuration |
+| `smpstart.reset` | Reset SMP to pre-start state |
+| `smpstart.admin` | Admin features and detailed error messages |
 
 ## Installation
 
-1. Download the latest release JAR file
+1. Download the latest release JAR
 2. Place it in your server's `plugins` folder
 3. Restart your server
-4. Configure settings using `/smpconfig` commands
+4. Configure settings using `/smp config`
 
 ## Configuration
 
-The plugin creates a `config.yml` file with default settings:
+Settings are grouped into sections in `config.yml`:
 
 ```yaml
-# Countdown duration in seconds
-countdown-duration: 10
+general:
+  world: ""          # target world (empty = default)
+  min-players: 1     # minimum online players to start
+  debug: false
 
-# Cooldown duration in seconds  
-cooldown-duration: 10
+countdown:
+  duration: 10       # seconds
+  cooldown: 60       # seconds before /smp start can be used again
+  bossbar: true
 
-# World border size before SMP starts
-pre-start-border-size: 100.0
+border:
+  pre-start-size: 6000.0
+  final-size: 10000.0
+  transition-seconds: 10
+  center-mode: "spawn"   # spawn | fixed
+  center-x: 0.0
+  center-z: 0.0
+  pre-start-damage:
+    amount: 0.0
+    buffer: 0.0
+  post-start-damage:
+    amount: 0.2
+    buffer: 5.0
 
-# World border size after SMP starts
-final-border-size: 1000.0
+pvp:
+  protection-duration: 30   # minutes (0 to disable)
 
-# Whether to send join reminders to offline OP players
-join-reminders-enabled: true
+reminders:
+  enabled: true
+  interval: 60   # seconds
 
-# How often to send reminders in seconds
-reminder-interval: 30
-
-# Enable debug logging
-debug: false
+phases:
+  pre-start:
+    difficulty: "peaceful"
+    disable-mob-spawning: true
+    disable-mob-damage: true
+  started:
+    difficulty: "normal"
+    disable-mob-spawning: false
+    disable-mob-damage: false
 ```
 
 ## How It Works
 
-1. **Setup**: Configure your desired settings using `/smpconfig`
-2. **Start**: Use `/smpstart` to begin the countdown
-3. **Countdown**: Players see countdown with effects every second
-4. **Launch**: At zero, border expands and SMP officially begins
-5. **Cooldown**: Command is disabled for the cooldown period
+1. **Setup**: Configure your desired settings using `/smp config`
+2. **Start**: Use `/smp start` to begin the countdown
+3. **Countdown**: Players see countdown titles, sounds, and a boss bar
+4. **Launch**: At zero, the border expands and the SMP officially begins
+5. **Cooldown**: The command is disabled for the cooldown period
 
 ## Requirements
 
 - Minecraft Server 1.19+
 - Java 17+
-- Bukkit/Spigot/Paper
+- Bukkit / Spigot / Paper
 
 ## Building
 

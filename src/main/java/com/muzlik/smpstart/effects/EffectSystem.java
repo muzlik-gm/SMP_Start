@@ -42,4 +42,16 @@ public interface EffectSystem {
      * Broadcast start message to all players
      */
     void broadcastStartMessage();
+    
+    /**
+     * Update the countdown boss bar
+     * @param remaining remaining seconds
+     * @param totalSeconds total countdown duration in seconds
+     */
+    void updateCountdownBossBar(int remaining, int totalSeconds);
+    
+    /**
+     * Clear the countdown boss bar
+     */
+    void clearCountdownBossBar();
 }

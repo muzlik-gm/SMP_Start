@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.muzlik</groupId>
-    <artifactId>smp-start</artifactId>
+    <artifactId>muzlik-smp-start</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -45,6 +45,14 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit Platform Engine (required for test discovery) -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-engine</artifactId>
+            <version>1.10.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -102,6 +110,18 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-engine</artifactId>
+                        <version>5.10.0</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.junit.platform</groupId>
+                        <artifactId>junit-platform-engine</artifactId>
+                        <version>1.10.0</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <includes>
                         <include>**/*Test.java</include>

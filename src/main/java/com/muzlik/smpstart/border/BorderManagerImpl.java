@@ -2,6 +2,7 @@ package com.muzlik.smpstart.border;
 
 import com.muzlik.smpstart.SMPStartPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 
@@ -24,13 +25,13 @@ public class BorderManagerImpl implements BorderManager {
                 World world = getMainWorld();
                 if (world != null) {
                     WorldBorder border = world.getWorldBorder();
-                    // Set border center to spawn location to ensure players are inside
-                    border.setCenter(world.getSpawnLocation());
+                    // Set border center based on configuration
+                    border.setCenter(getBorderCenter(world));
                     // Set border size
                     border.setSize(size);
                     // Disable damage during countdown to prevent deaths
-                    border.setDamageAmount(0.0);
-                    border.setDamageBuffer(0.0);
+                    border.setDamageAmount(plugin.getConfigManager().getPreStartBorderDamageAmount());
+                    border.setDamageBuffer(plugin.getConfigManager().getPreStartBorderDamageBuffer());
                     plugin.getLogger().info("Set world border to pre-start size: " + size + " blocks (damage disabled)");
                 } else {
                     plugin.getLogger().warning("Could not find main world for pre-start border");
@@ -51,11 +52,14 @@ public class BorderManagerImpl implements BorderManager {
                 World world = getMainWorld();
                 if (world != null) {
                     WorldBorder border = world.getWorldBorder();
+                    // Ensure border is centered based on configuration before transition
+                    border.setCenter(getBorderCenter(world));
                     // Re-enable border damage for the final border
-                    border.setDamageAmount(0.2); // Default Minecraft damage
-                    border.setDamageBuffer(5.0); // Default buffer
-                    // Smooth transition over 10 seconds
-                    border.setSize(finalSize, 10);
+                    border.setDamageAmount(plugin.getConfigManager().getBorderDamageAmount());
+                    border.setDamageBuffer(plugin.getConfigManager().getBorderDamageBuffer());
+                    // Smooth transition over configured seconds
+                    int transitionSeconds = plugin.getConfigManager().getBorderTransitionSeconds();
+                    border.setSize(finalSize, Math.max(0, transitionSeconds));
                     plugin.getLogger().info("Transitioning world border to final size: " + finalSize + " blocks (damage enabled)");
                 } else {
                     plugin.getLogger().warning("Could not find main world for border transition");
@@ -93,8 +97,8 @@ public class BorderManagerImpl implements BorderManager {
                 World world = getMainWorld();
                 if (world != null) {
                     WorldBorder border = world.getWorldBorder();
-                    // Ensure border is centered on spawn
-                    border.setCenter(world.getSpawnLocation());
+                    // Ensure border is centered based on configuration
+                    border.setCenter(getBorderCenter(world));
                     border.setSize(size);
                     plugin.getLogger().info("Set world border size to: " + size + " blocks");
                 } else {
@@ -113,10 +117,22 @@ public class BorderManagerImpl implements BorderManager {
      * @return the main world, or null if not found
      */
     private World getMainWorld() {
+        // Prefer configured world if provided
+        String configuredWorld = plugin.getConfigManager().getWorldName();
+        if (configuredWorld != null && !configuredWorld.trim().isEmpty()) {
+            World world = Bukkit.getWorld(configuredWorld.trim());
+            if (world != null) {
+                return world;
+            }
+            plugin.getLogger().warning("Configured world not found: " + configuredWorld + ". Falling back to default world.");
+        }
+        
         // Try to get the default world first
-        World world = Bukkit.getWorlds().get(0);
-        if (world != null) {
-            return world;
+        if (!Bukkit.getWorlds().isEmpty()) {
+            World world = Bukkit.getWorlds().get(0);
+            if (world != null) {
+                return world;
+            }
         }
         
         // Fallback: try to find a world with environment NORMAL
@@ -127,6 +143,17 @@ public class BorderManagerImpl implements BorderManager {
         }
         
         return null;
+    }
+    
+    private Location getBorderCenter(World world) {
+        String mode = plugin.getConfigManager().getBorderCenterMode();
+        if ("fixed".equalsIgnoreCase(mode)) {
+            double x = plugin.getConfigManager().getBorderCenterX();
+            double z = plugin.getConfigManager().getBorderCenterZ();
+            return new Location(world, x, world.getSpawnLocation().getY(), z);
+        }
+        
+        return world.getSpawnLocation();
     }
     
     @Override
@@ -147,17 +174,17 @@ public class BorderManagerImpl implements BorderManager {
                     WorldBorder border = world.getWorldBorder();
                     plugin.getLogger().info("Current border size before initialization: " + border.getSize());
                     
-                    // Set border center to spawn location
-                    border.setCenter(world.getSpawnLocation());
-                    plugin.getLogger().info("Set border center to spawn location: " + world.getSpawnLocation());
+                    // Set border center based on configuration
+                    border.setCenter(getBorderCenter(world));
+                    plugin.getLogger().info("Set border center to: " + getBorderCenter(world));
                     
                     // Set border size
                     border.setSize(size);
                     plugin.getLogger().info("Set border size to: " + size);
                     
                     // Disable damage during pre-start phase
-                    border.setDamageAmount(0.0);
-                    border.setDamageBuffer(0.0);
+                    border.setDamageAmount(plugin.getConfigManager().getPreStartBorderDamageAmount());
+                    border.setDamageBuffer(plugin.getConfigManager().getPreStartBorderDamageBuffer());
                     plugin.getLogger().info("Disabled border damage");
                     
                     plugin.getLogger().info("Successfully initialized world border to pre-start size: " + size + " blocks (damage disabled)");
@@ -190,17 +217,17 @@ public class BorderManagerImpl implements BorderManager {
                     WorldBorder border = world.getWorldBorder();
                     plugin.getLogger().info("Current border size before setting final: " + border.getSize());
                     
-                    // Set border center to spawn location
-                    border.setCenter(world.getSpawnLocation());
-                    plugin.getLogger().info("Set border center to spawn location: " + world.getSpawnLocation());
+                    // Set border center based on configuration
+                    border.setCenter(getBorderCenter(world));
+                    plugin.getLogger().info("Set border center to: " + getBorderCenter(world));
                     
                     // Set border size to final size
                     border.setSize(size);
                     plugin.getLogger().info("Set border size to final: " + size);
                     
                     // Enable border damage (SMP has started)
-                    border.setDamageAmount(0.2); // Default Minecraft damage
-                    border.setDamageBuffer(5.0); // Default buffer
+                    border.setDamageAmount(plugin.getConfigManager().getBorderDamageAmount());
+                    border.setDamageBuffer(plugin.getConfigManager().getBorderDamageBuffer());
                     plugin.getLogger().info("Enabled border damage for final border");
                     
                     plugin.getLogger().info("Successfully set world border to final size: " + size + " blocks (damage enabled)");

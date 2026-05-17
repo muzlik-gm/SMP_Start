@@ -1,9 +1,9 @@
 name: SMPStart
-version: 1.0.0
+version: ${project.version}
 main: com.muzlik.smpstart.SMPStartPlugin
 author: muzlik
 authors: [muzlik]
-description: A coordinated launch system for Minecraft SMP servers with countdown, border management, and player notifications
+description: Muzlik's SMP Starter — balanced early-game SMP launch system
 website: https://github.com/muzlik/smp-start-plugin
 api-version: 1.19
 load: STARTUP
@@ -11,33 +11,39 @@ depend: []
 softdepend: []
 
 commands:
-  smpstart:
-    description: Start the SMP countdown sequence
-    usage: /<command>
+  smp:
+    description: Muzlik's SMP Starter root command
+    usage: /smp <subcommand>
     permission: smpstart.use
-    permission-message: "§cYou don't have permission to start the SMP countdown!"
-    aliases: [start, begin]
-  smpconfig:
-    description: Configure SMP start settings
-    usage: /<command> <setting> [value]
-    permission: smpstart.config
-    permission-message: "§cYou don't have permission to configure SMP settings!"
-    aliases: [smpset, smpsettings]
+    permission-message: "You don't have permission to use Muzlik's SMP Starter."
+    aliases: [smpstart, msmp]
 
 permissions:
   smpstart.*:
-    description: Gives access to all SMP Start Plugin commands
+    description: Grants access to all SMP Starter commands.
     default: op
     children:
       smpstart.use: true
       smpstart.config: true
+      smpstart.cancel: true
+      smpstart.reload: true
+      smpstart.reset: true
       smpstart.admin: true
   smpstart.use:
-    description: Allows use of /smpstart command
+    description: Use /smp start and /smp status.
+    default: op
+  smpstart.cancel:
+    description: Use /smp cancel.
+    default: op
+  smpstart.reset:
+    description: Use /smp reset.
+    default: op
+  smpstart.reload:
+    description: Use /smp reload.
     default: op
   smpstart.config:
-    description: Allows configuration of plugin settings
+    description: Use /smp config.
     default: op
   smpstart.admin:
-    description: Allows access to admin features and detailed error messages
+    description: Access to admin features and detailed error messages.
     default: op

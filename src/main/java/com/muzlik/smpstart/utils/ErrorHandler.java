@@ -52,7 +52,7 @@ public class ErrorHandler {
      * @param message the error message
      */
     public void sendError(CommandSender sender, String message) {
-        sender.sendMessage(ChatColor.RED + "[SMP Error] " + message);
+        sender.sendMessage(ChatColor.RED + "[MSS Error] " + message);
     }
     
     /**
@@ -61,7 +61,7 @@ public class ErrorHandler {
      * @param message the success message
      */
     public void sendSuccess(CommandSender sender, String message) {
-        sender.sendMessage(ChatColor.GREEN + "[SMP] " + message);
+        sender.sendMessage(ChatColor.GREEN + "[MSS] " + message);
     }
     
     /**
@@ -70,7 +70,7 @@ public class ErrorHandler {
      * @param message the info message
      */
     public void sendInfo(CommandSender sender, String message) {
-        sender.sendMessage(ChatColor.YELLOW + "[SMP] " + message);
+        sender.sendMessage(ChatColor.YELLOW + "[MSS] " + message);
     }
     
     /**

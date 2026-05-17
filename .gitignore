@@ -54,3 +54,12 @@ ops.json
 whitelist.json
 usercache.json
 usernamecache.json
+
+# IDE specific files
+*.idea/
+*.iml
+*.iws
+*.vscode/
+.kiro/
+
+

@@ -17,12 +17,29 @@ class SMPStartPluginTest {
         PluginConfig config = new PluginConfig();
         
         assertEquals(10, config.getCountdownDuration());
-        assertEquals(10, config.getCooldownDuration());
+        assertEquals(60, config.getCooldownDuration());
         assertEquals(10.0, config.getPreStartBorderSize());
         assertEquals(10000.0, config.getFinalBorderSize());
         assertTrue(config.isJoinRemindersEnabled());
-        assertEquals(30, config.getReminderInterval());
+        assertEquals(60, config.getReminderInterval());
         assertEquals(30, config.getPvpProtectionDuration());
+        assertEquals("", config.getWorldName());
+        assertEquals(1, config.getMinOnlinePlayers());
+        assertTrue(config.isCountdownBossBarEnabled());
+        assertEquals("spawn", config.getBorderCenterMode());
+        assertEquals(0.0, config.getBorderCenterX());
+        assertEquals(0.0, config.getBorderCenterZ());
+        assertEquals(10, config.getBorderTransitionSeconds());
+        assertEquals(0.0, config.getPreStartBorderDamageAmount());
+        assertEquals(0.0, config.getPreStartBorderDamageBuffer());
+        assertEquals(0.2, config.getBorderDamageAmount());
+        assertEquals(5.0, config.getBorderDamageBuffer());
+        assertEquals("peaceful", config.getStartingDifficulty());
+        assertEquals("normal", config.getStartedDifficulty());
+        assertTrue(config.isStartingDisableMobSpawning());
+        assertFalse(config.isStartedDisableMobSpawning());
+        assertTrue(config.isStartingDisableMobDamage());
+        assertFalse(config.isStartedDisableMobDamage());
     }
     
     @Test
@@ -43,6 +60,23 @@ class SMPStartPluginTest {
         config.setFinalBorderSize(2000.0);
         config.setJoinRemindersEnabled(false);
         config.setReminderInterval(60);
+        config.setWorldName("world");
+        config.setMinOnlinePlayers(5);
+        config.setCountdownBossBarEnabled(false);
+        config.setBorderCenterMode("fixed");
+        config.setBorderCenterX(100.0);
+        config.setBorderCenterZ(-50.0);
+        config.setBorderTransitionSeconds(20);
+        config.setPreStartBorderDamageAmount(0.1);
+        config.setPreStartBorderDamageBuffer(2.0);
+        config.setBorderDamageAmount(0.4);
+        config.setBorderDamageBuffer(6.0);
+        config.setStartingDifficulty("easy");
+        config.setStartedDifficulty("hard");
+        config.setStartingDisableMobSpawning(false);
+        config.setStartedDisableMobSpawning(true);
+        config.setStartingDisableMobDamage(false);
+        config.setStartedDisableMobDamage(true);
         
         assertEquals(15, config.getCountdownDuration());
         assertEquals(20, config.getCooldownDuration());
@@ -50,6 +84,23 @@ class SMPStartPluginTest {
         assertEquals(2000.0, config.getFinalBorderSize());
         assertFalse(config.isJoinRemindersEnabled());
         assertEquals(60, config.getReminderInterval());
+        assertEquals("world", config.getWorldName());
+        assertEquals(5, config.getMinOnlinePlayers());
+        assertFalse(config.isCountdownBossBarEnabled());
+        assertEquals("fixed", config.getBorderCenterMode());
+        assertEquals(100.0, config.getBorderCenterX());
+        assertEquals(-50.0, config.getBorderCenterZ());
+        assertEquals(20, config.getBorderTransitionSeconds());
+        assertEquals(0.1, config.getPreStartBorderDamageAmount());
+        assertEquals(2.0, config.getPreStartBorderDamageBuffer());
+        assertEquals(0.4, config.getBorderDamageAmount());
+        assertEquals(6.0, config.getBorderDamageBuffer());
+        assertEquals("easy", config.getStartingDifficulty());
+        assertEquals("hard", config.getStartedDifficulty());
+        assertFalse(config.isStartingDisableMobSpawning());
+        assertTrue(config.isStartedDisableMobSpawning());
+        assertFalse(config.isStartingDisableMobDamage());
+        assertTrue(config.isStartedDisableMobDamage());
     }
     
     @Test

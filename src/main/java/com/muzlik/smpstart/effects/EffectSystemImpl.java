@@ -4,6 +4,9 @@ import com.muzlik.smpstart.SMPStartPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 
 /**
@@ -12,6 +15,7 @@ import org.bukkit.entity.Player;
 public class EffectSystemImpl implements EffectSystem {
     
     private final SMPStartPlugin plugin;
+    private BossBar countdownBossBar;
     
     public EffectSystemImpl(SMPStartPlugin plugin) {
         this.plugin = plugin;
@@ -109,7 +113,7 @@ public class EffectSystemImpl implements EffectSystem {
     public void showStartAnimation() {
         try {
             String title = ChatColor.GOLD + "" + ChatColor.BOLD + "SMP STARTED!";
-            String subtitle = ChatColor.GREEN + "Good luck and have fun!";
+            String subtitle = ChatColor.GREEN + "Good luck, have fun!";
             
             // Show start animation to all players
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -128,13 +132,13 @@ public class EffectSystemImpl implements EffectSystem {
             
             if (remaining <= 3) {
                 color = ChatColor.RED;
-                message = color + "" + ChatColor.BOLD + "[SMP] " + remaining + " seconds remaining!";
+                message = color + "" + ChatColor.BOLD + "[MSS] " + remaining + "s!";
             } else if (remaining <= 10) {
                 color = ChatColor.YELLOW;
-                message = color + "[SMP] " + remaining + " seconds until start...";
+                message = color + "[MSS] Starting in " + remaining + "s...";
             } else {
                 color = ChatColor.GREEN;
-                message = color + "[SMP] Starting in " + remaining + " seconds";
+                message = color + "[MSS] Starting in " + remaining + "s";
             }
             
             // Broadcast to all players
@@ -147,13 +151,64 @@ public class EffectSystemImpl implements EffectSystem {
     @Override
     public void broadcastStartMessage() {
         try {
-            String message = ChatColor.GOLD + "" + ChatColor.BOLD + "[SMP] " + 
+            String message = ChatColor.GOLD + "" + ChatColor.BOLD + "[MSS] " +
                            ChatColor.GREEN + "The SMP has officially started! Good luck everyone!";
             
             // Broadcast to all players
             Bukkit.broadcastMessage(message);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to broadcast start message: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public void updateCountdownBossBar(int remaining, int totalSeconds) {
+        if (!plugin.getConfigManager().isCountdownBossBarEnabled()) {
+            clearCountdownBossBar();
+            return;
+        }
+        
+        if (totalSeconds <= 0) {
+            return;
+        }
+        
+        if (countdownBossBar == null) {
+            countdownBossBar = Bukkit.createBossBar("", BarColor.GREEN, BarStyle.SOLID);
+            countdownBossBar.setVisible(true);
+        }
+        
+        double progress = Math.max(0.0, Math.min(1.0, (double) remaining / totalSeconds));
+        countdownBossBar.setProgress(progress);
+        
+        BarColor color;
+        String title;
+        if (remaining <= 3) {
+            color = BarColor.RED;
+            title = ChatColor.RED + "" + ChatColor.BOLD + "Starting in " + remaining + "s";
+        } else if (remaining <= 5) {
+            color = BarColor.YELLOW;
+            title = ChatColor.YELLOW + "Starting in " + remaining + "s";
+        } else {
+            color = BarColor.GREEN;
+            title = ChatColor.GREEN + "Starting in " + remaining + "s";
+        }
+        
+        countdownBossBar.setColor(color);
+        countdownBossBar.setTitle(title);
+        
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!countdownBossBar.getPlayers().contains(player)) {
+                countdownBossBar.addPlayer(player);
+            }
+        }
+    }
+    
+    @Override
+    public void clearCountdownBossBar() {
+        if (countdownBossBar != null) {
+            countdownBossBar.removeAll();
+            countdownBossBar.setVisible(false);
+            countdownBossBar = null;
         }
     }
 }

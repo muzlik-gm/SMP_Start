@@ -50,6 +50,17 @@ class EffectSystemTest {
             public void broadcastStartMessage() {
                 // Mock implementation
             }
+            
+            @Override
+            public void updateCountdownBossBar(int remaining, int totalSeconds) {
+                assertTrue(remaining >= 0);
+                assertTrue(totalSeconds >= 0);
+            }
+            
+            @Override
+            public void clearCountdownBossBar() {
+                // Mock implementation
+            }
         };
         
         // Test that methods can be called without exceptions
@@ -63,6 +74,8 @@ class EffectSystemTest {
             effectSystem.showStartAnimation();
             effectSystem.broadcastCountdownMessage(10);
             effectSystem.broadcastStartMessage();
+            effectSystem.updateCountdownBossBar(10, 10);
+            effectSystem.clearCountdownBossBar();
         });
     }
     

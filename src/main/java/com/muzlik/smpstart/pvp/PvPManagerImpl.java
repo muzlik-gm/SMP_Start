@@ -34,7 +34,7 @@ public class PvPManagerImpl implements PvPManager, Listener {
     
     @Override
     public void startPvPProtection() {
-        startPvPProtection(System.currentTimeMillis());
+        startPvPProtection(System.currentTimeMillis(), false);
     }
     
     /**
@@ -42,11 +42,24 @@ public class PvPManagerImpl implements PvPManager, Listener {
      * @param startTime when the protection originally started
      */
     public void startPvPProtection(long startTime) {
+        startPvPProtection(startTime, true);
+    }
+    
+    private void startPvPProtection(long startTime, boolean resumed) {
         int durationMinutes = plugin.getConfigManager().getPvpProtectionDuration();
         
         if (durationMinutes <= 0) {
             plugin.getLogger().info("PvP protection is disabled in config");
             return;
+        }
+        
+        // Prevent duplicate boss bars or timers if protection is already active
+        if (pvpProtectionActive) {
+            if (protectionTask != null) {
+                protectionTask.cancel();
+                protectionTask = null;
+            }
+            removePvPBossBar();
         }
         
         pvpProtectionActive = true;
@@ -65,21 +78,21 @@ public class PvPManagerImpl implements PvPManager, Listener {
         
         int remainingMinutes = (int) (durationMinutes - elapsedMinutes);
         
-        // Disable PvP in all worlds
-        for (World world : Bukkit.getWorlds()) {
+        // Disable PvP in target worlds
+        for (World world : getTargetWorlds()) {
             world.setPVP(false);
         }
         
         // Broadcast protection start/resume
         String message;
-        if (startTime == System.currentTimeMillis()) {
+        if (!resumed) {
             // New protection
-            message = ChatColor.YELLOW + "[SMP] " + ChatColor.GREEN + "PvP protection enabled for " + 
+            message = ChatColor.YELLOW + "[MSS] " + ChatColor.GREEN + "PvP protection active for " +
                      durationMinutes + " minutes. Players cannot damage each other!";
         } else {
             // Resumed protection
-            message = ChatColor.YELLOW + "[SMP] " + ChatColor.GREEN + "PvP protection resumed - " + 
-                     remainingMinutes + " minutes remaining. Players cannot damage each other!";
+            message = ChatColor.YELLOW + "[MSS] " + ChatColor.GREEN + "PvP protection resumed — " +
+                     remainingMinutes + " minutes remaining.";
         }
         Bukkit.broadcastMessage(message);
         
@@ -118,14 +131,14 @@ public class PvPManagerImpl implements PvPManager, Listener {
         // Remove boss bar
         removePvPBossBar();
         
-        // Enable PvP in all worlds
-        for (World world : Bukkit.getWorlds()) {
+        // Enable PvP in target worlds
+        for (World world : getTargetWorlds()) {
             world.setPVP(true);
         }
         
         // Broadcast protection end
-        String message = ChatColor.YELLOW + "[SMP] " + ChatColor.RED + "PvP protection has ended! " + 
-                        ChatColor.YELLOW + "Players can now damage each other. Be careful!";
+        String message = ChatColor.YELLOW + "[MSS] " + ChatColor.RED + "PvP protection has ended! " +
+                        ChatColor.YELLOW + "Watch your back!";
         Bukkit.broadcastMessage(message);
         
         plugin.getLogger().info("PvP protection ended - PvP is now enabled");
@@ -159,7 +172,7 @@ public class PvPManagerImpl implements PvPManager, Listener {
             long delay = (durationMinutes - 5) * 60 * 20L;
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (pvpProtectionActive) {
-                    String msg = ChatColor.YELLOW + "[SMP] " + ChatColor.GOLD + 
+                    String msg = ChatColor.YELLOW + "[MSS] " + ChatColor.GOLD +
                                 "PvP protection ends in 5 minutes!";
                     Bukkit.broadcastMessage(msg);
                 }
@@ -171,7 +184,7 @@ public class PvPManagerImpl implements PvPManager, Listener {
             long delay = (durationMinutes - 1) * 60 * 20L;
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (pvpProtectionActive) {
-                    String msg = ChatColor.YELLOW + "[SMP] " + ChatColor.GOLD + 
+                    String msg = ChatColor.YELLOW + "[MSS] " + ChatColor.GOLD +
                                 "PvP protection ends in 1 minute!";
                     Bukkit.broadcastMessage(msg);
                 }
@@ -183,7 +196,7 @@ public class PvPManagerImpl implements PvPManager, Listener {
         if (delay30s > 0) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (pvpProtectionActive) {
-                    String msg = ChatColor.YELLOW + "[SMP] " + ChatColor.RED + 
+                    String msg = ChatColor.YELLOW + "[MSS] " + ChatColor.RED +
                                 "PvP protection ends in 30 seconds!";
                     Bukkit.broadcastMessage(msg);
                 }
@@ -210,8 +223,8 @@ public class PvPManagerImpl implements PvPManager, Listener {
             
             // Notify the attacker
             int remaining = getRemainingProtectionTime();
-            String message = ChatColor.RED + "PvP is disabled! Protection ends in " + 
-                           remaining + " minute" + (remaining != 1 ? "s" : "") + ".";
+            String message = ChatColor.RED + "PvP is disabled for " +
+                           remaining + " more minute" + (remaining != 1 ? "s" : "") + ".";
             attacker.sendMessage(message);
         }
     }
@@ -223,7 +236,7 @@ public class PvPManagerImpl implements PvPManager, Listener {
     private void createPvPBossBar(int durationMinutes) {
         // Create boss bar
         pvpBossBar = Bukkit.createBossBar(
-            ChatColor.GREEN + "PvP Protection: " + durationMinutes + " minutes remaining",
+            ChatColor.GREEN + "PvP Protection: " + durationMinutes + " min remaining",
             BarColor.GREEN,
             BarStyle.SOLID
         );
@@ -323,6 +336,18 @@ public class PvPManagerImpl implements PvPManager, Listener {
             pvpBossBar = null;
             plugin.getLogger().info("PvP protection boss bar removed");
         }
+    }
+    
+    private Iterable<World> getTargetWorlds() {
+        String configuredWorld = plugin.getConfigManager().getWorldName();
+        if (configuredWorld != null && !configuredWorld.trim().isEmpty()) {
+            World world = Bukkit.getWorld(configuredWorld.trim());
+            if (world != null) {
+                return java.util.Collections.singletonList(world);
+            }
+            plugin.getLogger().warning("Configured world not found: " + configuredWorld + ". Applying PvP to all worlds.");
+        }
+        return Bukkit.getWorlds();
     }
     
     /**

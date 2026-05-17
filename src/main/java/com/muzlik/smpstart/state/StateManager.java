@@ -32,6 +32,18 @@ public interface StateManager {
     void completeCountdown();
     
     /**
+     * Cancel the countdown if active
+     * @return true if countdown was cancelled, false otherwise
+     */
+    boolean cancelCountdown();
+    
+    /**
+     * Reset the SMP state back to pre-start
+     * @return true if reset completed
+     */
+    boolean resetSmp();
+    
+    /**
      * Start the cooldown period
      */
     void startCooldown();
