@@ -151,8 +151,8 @@ phases:
 ## Building
 
 ```bash
-git clone https://github.com/muzlik/smp-start-plugin.git
-cd smp-start-plugin
+git clone https://github.com/muzlik-gm/SMP_Start.git
+cd SMP_Start
 mvn clean package
 ```
 
