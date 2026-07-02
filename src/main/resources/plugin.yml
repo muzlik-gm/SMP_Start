@@ -16,7 +16,7 @@ commands:
     usage: /smp <subcommand>
     permission: smpstart.use
     permission-message: "You don't have permission to use Muzlik's SMP Starter."
-    aliases: [smpstart, msmp]
+    aliases: [smpstart, msmp, sstart]
 
 permissions:
   smpstart.*:

@@ -5,7 +5,7 @@ import com.muzlik.smpstart.data.PluginConfig;
 import org.bukkit.configuration.file.FileConfiguration;
 
 /**
- * Implementation of ConfigManager that handles plugin configuration.
+ * Implementation of ConfigManager
  */
 public class ConfigManagerImpl implements ConfigManager {
 
@@ -45,6 +45,7 @@ public class ConfigManagerImpl implements ConfigManager {
 
         // pvp
         config.setPvpProtectionDuration(c.getInt("pvp.protection-duration", 30));
+        config.setPreStartBlockProtectionEnabled(c.getBoolean("pvp.pre-start-block-protection", true));
 
         // reminders
         config.setJoinRemindersEnabled(c.getBoolean("reminders.enabled", true));
@@ -169,6 +170,15 @@ public class ConfigManagerImpl implements ConfigManager {
     @Override public int getPvpProtectionDuration() { return config.getPvpProtectionDuration(); }
     @Override public void setPvpProtectionDuration(int duration) {
         if (duration >= 0) { config.setPvpProtectionDuration(duration); plugin.getConfig().set("pvp.protection-duration", duration); }
+    }
+
+    @Override public boolean isPreStartBlockProtectionEnabled() {
+        return config.isPreStartBlockProtectionEnabled();
+    }
+
+    @Override public void setPreStartBlockProtectionEnabled(boolean enabled) {
+        config.setPreStartBlockProtectionEnabled(enabled);
+        plugin.getConfig().set("pvp.pre-start-block-protection", enabled);
     }
 
     @Override public void saveConfig() { plugin.saveConfig(); }

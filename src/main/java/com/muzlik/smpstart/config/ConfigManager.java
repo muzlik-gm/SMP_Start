@@ -269,4 +269,14 @@ public interface ConfigManager {
      * @param duration protection duration (0 to disable)
      */
     void setPvpProtectionDuration(int duration);
+
+    /**
+     * Check if pre-start block protection is enabled
+     */
+    boolean isPreStartBlockProtectionEnabled();
+
+    /**
+     * Enable or disable pre-start block protection
+     */
+    void setPreStartBlockProtectionEnabled(boolean enabled);
 }

@@ -2,7 +2,7 @@ package com.muzlik.smpstart.commands.subcommands;
 
 import com.muzlik.smpstart.SMPStartPlugin;
 import com.muzlik.smpstart.commands.SubCommand;
-import org.bukkit.ChatColor;
+import com.muzlik.smpstart.utils.MessageUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -21,6 +21,7 @@ public class MenuSubCommand implements SubCommand {
     }
 
     @Override public String getName()        { return "menu"; }
+    @Override public List<String> getAliases() { return List.of("gui"); }
     @Override public String getPermission()  { return "smpstart.use"; }
     @Override public String getUsage()       { return "menu"; }
     @Override public String getDescription() { return "Open the SMP starter control menu."; }
@@ -28,7 +29,7 @@ public class MenuSubCommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "The menu can only be opened by a player in-game.");
+            MessageUtils.sendError(sender, "The menu can only be opened by a player in-game.");
             return true;
         }
         plugin.getConfigMenuManager().openMainMenu(player);

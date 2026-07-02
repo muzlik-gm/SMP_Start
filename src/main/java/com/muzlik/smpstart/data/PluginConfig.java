@@ -30,6 +30,7 @@ public class PluginConfig {
     private boolean startedDisableMobSpawning = false;
     private boolean startingDisableMobDamage = true;
     private boolean startedDisableMobDamage = false;
+    private boolean preStartBlockProtectionEnabled = true;
     
     // Getters
     public int getCountdownDuration() {
@@ -127,14 +128,18 @@ public class PluginConfig {
     public boolean isStartedDisableMobDamage() {
         return startedDisableMobDamage;
     }
+
+    public boolean isPreStartBlockProtectionEnabled() {
+        return preStartBlockProtectionEnabled;
+    }
     
     // Setters
     public void setCountdownDuration(int countdownDuration) {
         this.countdownDuration = countdownDuration;
     }
     
-    public void setCooldownDuration(int cooldownDuration) {
-        this.cooldownDuration = cooldownDuration;
+    public void setCooldownDuration(int countdownDuration) {
+        this.cooldownDuration = countdownDuration;
     }
     
     public void setPreStartBorderSize(double preStartBorderSize) {
@@ -223,5 +228,9 @@ public class PluginConfig {
     
     public void setStartedDisableMobDamage(boolean startedDisableMobDamage) {
         this.startedDisableMobDamage = startedDisableMobDamage;
+    }
+
+    public void setPreStartBlockProtectionEnabled(boolean preStartBlockProtectionEnabled) {
+        this.preStartBlockProtectionEnabled = preStartBlockProtectionEnabled;
     }
 }

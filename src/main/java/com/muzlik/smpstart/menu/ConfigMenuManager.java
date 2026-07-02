@@ -3,9 +3,10 @@ package com.muzlik.smpstart.menu;
 import com.muzlik.smpstart.SMPStartPlugin;
 import com.muzlik.smpstart.state.StateManager.PluginState;
 import com.muzlik.smpstart.state.StateManagerImpl;
+import com.muzlik.smpstart.utils.MessageUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,372 +20,172 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 /**
- * Clean, simplistic GUI for SMP Starter.
- * Design: dark glass borders, named panes as buttons, small-caps style text.
+ * Modern GUI for SMP Starter.
+ * Design: Integrated HEX colors, sound effects, and cleaner layouts.
  */
 public class ConfigMenuManager implements Listener {
 
-    // ── Titles (kept short — Minecraft truncates long titles) ─────────────────
-    private static final String TITLE_MAIN      = ChatColor.DARK_GRAY + "SMP Starter";
-    private static final String TITLE_COUNTDOWN = ChatColor.DARK_GRAY + "Countdown";
-    private static final String TITLE_BORDER    = ChatColor.DARK_GRAY + "World Border";
-    private static final String TITLE_PVP       = ChatColor.DARK_GRAY + "PvP";
-    private static final String TITLE_REMINDERS = ChatColor.DARK_GRAY + "Reminders";
-    private static final String TITLE_PHASES    = ChatColor.DARK_GRAY + "Phases";
-
-    // ── Shared pane materials ─────────────────────────────────────────────────
-    private static final Material PANE_DARK   = Material.BLACK_STAINED_GLASS_PANE;
-    private static final Material PANE_ACCENT = Material.GRAY_STAINED_GLASS_PANE;
-
-    // ── Main menu slot map ────────────────────────────────────────────────────
-    //  Row 0 (0-8):   top border
-    //  Row 1 (9-17):  status info
-    //  Row 2 (18-26): action buttons
-    //  Row 3 (27-35): divider
-    //  Row 4 (36-44): category buttons
-    //  Row 5 (45-53): bottom border
-
-    private static final int SLOT_STATUS_STATE   = 10;
-    private static final int SLOT_STATUS_BORDER  = 12;
-    private static final int SLOT_STATUS_PVP     = 14;
-    private static final int SLOT_STATUS_PLAYERS = 16;
-
-    private static final int SLOT_START   = 19;
-    private static final int SLOT_CANCEL  = 21;
-    private static final int SLOT_RESET   = 23;
-    private static final int SLOT_RELOAD  = 25;
-
-    private static final int SLOT_CAT_COUNTDOWN = 37;
-    private static final int SLOT_CAT_BORDER    = 39;
-    private static final int SLOT_CAT_PVP       = 41;
-    private static final int SLOT_CAT_REMINDERS = 43;
-    private static final int SLOT_CAT_PHASES    = 36;
-
     private final SMPStartPlugin plugin;
-    private final Map<UUID, PlayerMenuState> menuStates  = new HashMap<>();
-    private final Map<UUID, String>          openMenus   = new HashMap<>();
-    private final Map<UUID, Double>          pendingBorderX = new HashMap<>();
+
+    private static final String TITLE_MAIN      = MessageUtils.color("&#00FBFF&lSMP STARTER");
+    private static final String TITLE_COUNTDOWN = MessageUtils.color("&#00FBFF&lCOUNTDOWN SETTINGS");
+    private static final String TITLE_BORDER    = MessageUtils.color("&#00FBFF&lBORDER SETTINGS");
+    private static final String TITLE_PVP       = MessageUtils.color("&#00FBFF&lPVP SETTINGS");
+    private static final String TITLE_REMINDERS = MessageUtils.color("&#00FBFF&lREMINDER SETTINGS");
+    private static final String TITLE_PHASES    = MessageUtils.color("&#00FBFF&lPHASE SETTINGS");
+
+    private final Map<UUID, PlayerMenuState> menuStates = new HashMap<>();
+    private final Map<UUID, String> openMenus = new HashMap<>();
+    private final Map<UUID, Double> pendingBorderX = new HashMap<>();
 
     public ConfigMenuManager(SMPStartPlugin plugin) {
         this.plugin = plugin;
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     // =========================================================================
-    //  MAIN MENU
+    //  OPENERS
     // =========================================================================
 
     public void openMainMenu(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 54, TITLE_MAIN);
+        Inventory inv = Bukkit.createInventory(null, 45, TITLE_MAIN);
+        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);
 
-        // Full border + divider row
-        fill(inv, PANE_DARK, 0,1,2,3,4,5,6,7,8);                        // top
-        fill(inv, PANE_DARK, 45,46,47,48,49,50,51,52,53);                // bottom
-        fill(inv, PANE_DARK, 9,17,18,26,27,28,29,30,31,32,33,34,35,44); // sides + divider
+        boolean smpStarted = isSmpStarted();
+        PluginState state = plugin.getStateManager().getCurrentState();
 
-        // ── Status row ────────────────────────────────────────────────────────
-        PluginState state  = plugin.getStateManager().getCurrentState();
-        boolean started    = isSmpStarted();
+        // Status Item
+        ItemStack status = pane(Material.BEACON, MessageUtils.color("&#00FBFF&lCURRENT STATUS"),
+                MessageUtils.color("&8&m━━━━━━━━━━━━━━━━━━━━"),
+                MessageUtils.color("&7Status: &f" + state.name()),
+                MessageUtils.color("&7SMP Started: " + (smpStarted ? "&aYes" : "&cNo")),
+                MessageUtils.color("&8&m━━━━━━━━━━━━━━━━━━━━"));
+        inv.setItem(4, status);
 
-        String stateValue  = started                       ? ChatColor.GREEN  + "STARTED"
-                           : state == PluginState.COUNTDOWN ? ChatColor.YELLOW + "COUNTDOWN  " + plugin.getStateManager().getRemainingCountdown() + "s"
-                           : state == PluginState.COOLDOWN  ? ChatColor.AQUA   + "COOLDOWN  "  + plugin.getStateManager().getRemainingCooldown()  + "s"
-                           :                                  ChatColor.RED    + "IDLE";
+        // Control Buttons
+        inv.setItem(11, pane(Material.CLOCK, MessageUtils.color("&#00FBFF&lCOUNTDOWN"), MessageUtils.color("&7Duration, Cooldown, Boss Bar")));
+        inv.setItem(13, pane(Material.BARRIER, MessageUtils.color("&#00FBFF&lWORLD BORDER"), MessageUtils.color("&7Sizes, Transition, Center")));
+        inv.setItem(15, pane(Material.DIAMOND_SWORD, MessageUtils.color("&#00FBFF&lPVP & SAFETY"), MessageUtils.color("&7PvP Protection, Blocks")));
+        inv.setItem(29, pane(Material.BELL, MessageUtils.color("&#00FBFF&lREMINDERS"), MessageUtils.color("&7Join alerts for Admins")));
+        inv.setItem(31, pane(Material.GRASS_BLOCK, MessageUtils.color("&#00FBFF&lPHASES"), MessageUtils.color("&7Difficulty, Mobs, Players")));
 
-        inv.setItem(SLOT_STATUS_STATE, pane(PANE_ACCENT,
-                ChatColor.WHITE + "STATE",
-                ChatColor.DARK_GRAY + "» " + stateValue));
+        // Action Buttons
+        if (state == PluginState.IDLE && !smpStarted) {
+            inv.setItem(22, pane(Material.LIME_CONCRETE, MessageUtils.color("&a&lSTART SMP"), MessageUtils.color("&7Begins the launch sequence")));
+        } else if (state == PluginState.COUNTDOWN) {
+            inv.setItem(22, pane(Material.RED_CONCRETE, MessageUtils.color("&c&lCANCEL START"), MessageUtils.color("&7Stops the countdown")));
+        } else {
+            inv.setItem(22, pane(Material.TNT, MessageUtils.color("&c&lRESET SMP"), MessageUtils.color("&7Returns everything to pre-start")));
+        }
 
-        double pre  = plugin.getConfigManager().getPreStartBorderSize();
-        double fin  = plugin.getConfigManager().getFinalBorderSize();
-        inv.setItem(SLOT_STATUS_BORDER, pane(PANE_ACCENT,
-                ChatColor.WHITE + "BORDER",
-                ChatColor.DARK_GRAY + "Pre  " + ChatColor.GRAY + fmt(pre),
-                ChatColor.DARK_GRAY + "Post " + ChatColor.GRAY + fmt(fin)));
-
-        int pvpMin = plugin.getConfigManager().getPvpProtectionDuration();
-        inv.setItem(SLOT_STATUS_PVP, pane(PANE_ACCENT,
-                ChatColor.WHITE + "PVP PROTECTION",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + pvpMin + " min"));
-
-        int minP   = plugin.getConfigManager().getMinOnlinePlayers();
-        int online = Bukkit.getOnlinePlayers().size();
-        inv.setItem(SLOT_STATUS_PLAYERS, pane(PANE_ACCENT,
-                ChatColor.WHITE + "PLAYERS",
-                ChatColor.DARK_GRAY + "Online   " + ChatColor.GRAY + online,
-                ChatColor.DARK_GRAY + "Required " + ChatColor.GRAY + minP));
-
-        // ── Action buttons ────────────────────────────────────────────────────
-        boolean canStart  = plugin.getStateManager().canExecuteStart();
-        boolean canCancel = state == PluginState.COUNTDOWN;
-
-        inv.setItem(SLOT_START, pane(
-                canStart ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE,
-                canStart ? ChatColor.GREEN + "START SMP" : ChatColor.DARK_GRAY + "START SMP",
-                canStart ? ChatColor.GRAY + "Begin the countdown."
-                         : ChatColor.DARK_GRAY + "Not available right now."));
-
-        inv.setItem(SLOT_CANCEL, pane(
-                canCancel ? Material.RED_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE,
-                canCancel ? ChatColor.RED + "CANCEL" : ChatColor.DARK_GRAY + "CANCEL",
-                canCancel ? ChatColor.GRAY + "Stop the active countdown."
-                          : ChatColor.DARK_GRAY + "No countdown running."));
-
-        inv.setItem(SLOT_RESET, pane(Material.ORANGE_STAINED_GLASS_PANE,
-                ChatColor.GOLD + "RESET SMP",
-                ChatColor.GRAY + "Revert to pre-start state.",
-                ChatColor.DARK_GRAY + "Teleports all players to spawn."));
-
-        inv.setItem(SLOT_RELOAD, pane(Material.CYAN_STAINED_GLASS_PANE,
-                ChatColor.AQUA + "RELOAD CONFIG",
-                ChatColor.GRAY + "Reload config.yml from disk."));
-
-        // ── Category buttons ──────────────────────────────────────────────────
-        inv.setItem(SLOT_CAT_PHASES,    pane(Material.GREEN_STAINED_GLASS_PANE,
-                ChatColor.GREEN + "PHASES",
-                ChatColor.GRAY + "Difficulty, mobs, min players."));
-
-        inv.setItem(SLOT_CAT_COUNTDOWN, pane(Material.YELLOW_STAINED_GLASS_PANE,
-                ChatColor.YELLOW + "COUNTDOWN",
-                ChatColor.GRAY + "Duration, cooldown, boss bar."));
-
-        inv.setItem(SLOT_CAT_BORDER, pane(Material.PURPLE_STAINED_GLASS_PANE,
-                ChatColor.LIGHT_PURPLE + "WORLD BORDER",
-                ChatColor.GRAY + "Sizes, center, transition."));
-
-        inv.setItem(SLOT_CAT_PVP, pane(Material.RED_STAINED_GLASS_PANE,
-                ChatColor.RED + "PVP",
-                ChatColor.GRAY + "Protection duration."));
-
-        inv.setItem(SLOT_CAT_REMINDERS, pane(Material.ORANGE_STAINED_GLASS_PANE,
-                ChatColor.GOLD + "REMINDERS",
-                ChatColor.GRAY + "Join reminders & interval."));
-
-        openMenus.put(player.getUniqueId(), TITLE_MAIN);
         player.openInventory(inv);
+        openMenus.put(player.getUniqueId(), TITLE_MAIN);
     }
 
-    // =========================================================================
-    //  COUNTDOWN MENU  (27 slots — 3 rows)
-    // =========================================================================
-
     public void openCountdownMenu(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 27, TITLE_COUNTDOWN);
-        fill(inv, PANE_DARK, 0,1,2,3,4,5,6,7,8);
-        fill(inv, PANE_DARK, 18,19,20,21,22,23,24,25,26);
-        fill(inv, PANE_DARK, 9,17);
+        Inventory inv = Bukkit.createInventory(null, 45, TITLE_COUNTDOWN);
+        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);
 
-        int cd   = plugin.getConfigManager().getCountdownDuration();
+        int dur = plugin.getConfigManager().getCountdownDuration();
         int cool = plugin.getConfigManager().getCooldownDuration();
         boolean bb = plugin.getConfigManager().isCountdownBossBarEnabled();
 
-        inv.setItem(10, pane(Material.YELLOW_STAINED_GLASS_PANE,
-                ChatColor.YELLOW + "COUNTDOWN DURATION",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + cd + "s",
-                ChatColor.DARK_GRAY + "Click to change."));
+        inv.setItem(20, pane(Material.CLOCK, MessageUtils.color("&#00FBFF&lDURATION"), MessageUtils.color("&7Current: &f" + dur + "s"), "", MessageUtils.color("&eClick to change")));
+        inv.setItem(22, pane(Material.RECOVERY_COMPASS, MessageUtils.color("&#00FBFF&lCOOLDOWN"), MessageUtils.color("&7Current: &f" + cool + "s"), "", MessageUtils.color("&eClick to change")));
+        inv.setItem(24, pane(bb ? Material.LIME_DYE : Material.GRAY_DYE, MessageUtils.color("&#00FBFF&lBOSS BAR"), MessageUtils.color("&7Status: " + (bb ? "&aEnabled" : "&cDisabled")), "", MessageUtils.color("&eClick to toggle")));
 
-        inv.setItem(12, pane(Material.BLUE_STAINED_GLASS_PANE,
-                ChatColor.AQUA + "COOLDOWN DURATION",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + cool + "s",
-                ChatColor.DARK_GRAY + "Click to change."));
-
-        inv.setItem(14, pane(bb ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE,
-                ChatColor.WHITE + "BOSS BAR",
-                ChatColor.DARK_GRAY + "» " + (bb ? ChatColor.GREEN + "ENABLED" : ChatColor.RED + "DISABLED"),
-                ChatColor.DARK_GRAY + "Click to toggle."));
-
-        inv.setItem(16, pane(PANE_ACCENT,
-                ChatColor.GRAY + "BACK",
-                ChatColor.DARK_GRAY + "Return to main menu."));
-
-        openMenus.put(player.getUniqueId(), TITLE_COUNTDOWN);
+        inv.setItem(40, pane(Material.ARROW, MessageUtils.color("&c&lBACK")));
         player.openInventory(inv);
+        openMenus.put(player.getUniqueId(), TITLE_COUNTDOWN);
     }
-
-    // =========================================================================
-    //  BORDER MENU  (36 slots — 4 rows)
-    // =========================================================================
 
     public void openBorderMenu(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 36, TITLE_BORDER);
-        fill(inv, PANE_DARK, 0,1,2,3,4,5,6,7,8);
-        fill(inv, PANE_DARK, 27,28,29,30,31,32,33,34,35);
-        fill(inv, PANE_DARK, 9,17,18,26);
+        Inventory inv = Bukkit.createInventory(null, 45, TITLE_BORDER);
+        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);
 
-        double pre  = plugin.getConfigManager().getPreStartBorderSize();
-        double fin  = plugin.getConfigManager().getFinalBorderSize();
-        int    trans = plugin.getConfigManager().getBorderTransitionSeconds();
-        String mode  = plugin.getConfigManager().getBorderCenterMode();
-        boolean fixed = "fixed".equalsIgnoreCase(mode);
+        double pre = plugin.getConfigManager().getPreStartBorderSize();
+        double fin = plugin.getConfigManager().getFinalBorderSize();
+        int trans = plugin.getConfigManager().getBorderTransitionSeconds();
+        String mode = plugin.getConfigManager().getBorderCenterMode();
+        double cx = plugin.getConfigManager().getBorderCenterX();
+        double cz = plugin.getConfigManager().getBorderCenterZ();
 
-        inv.setItem(10, pane(Material.ORANGE_STAINED_GLASS_PANE,
-                ChatColor.GOLD + "PRE-START SIZE",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + fmt(pre) + " blocks",
-                ChatColor.DARK_GRAY + "Click to change."));
+        inv.setItem(11, pane(Material.IRON_BARS, MessageUtils.color("&#00FBFF&lPRE-START SIZE"), MessageUtils.color("&7Current: &f" + fmt(pre) + " blocks"), "", MessageUtils.color("&eClick to change")));
+        inv.setItem(13, pane(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE, MessageUtils.color("&#00FBFF&lFINAL SIZE"), MessageUtils.color("&7Current: &f" + fmt(fin) + " blocks"), "", MessageUtils.color("&eClick to change")));
+        inv.setItem(15, pane(Material.REPEATER, MessageUtils.color("&#00FBFF&lTRANSITION"), MessageUtils.color("&7Current: &f" + trans + "s"), "", MessageUtils.color("&eClick to change")));
 
-        inv.setItem(12, pane(Material.LIME_STAINED_GLASS_PANE,
-                ChatColor.GREEN + "FINAL SIZE",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + fmt(fin) + " blocks",
-                ChatColor.DARK_GRAY + "Click to change."));
+        inv.setItem(29, pane(Material.COMPASS, MessageUtils.color("&#00FBFF&lCENTER MODE"), MessageUtils.color("&7Current: &f" + mode), "", MessageUtils.color("&eClick to cycle")));
+        inv.setItem(31, pane(Material.MAP, MessageUtils.color("&#00FBFF&lFIXED POSITION"), MessageUtils.color("&7X: &f" + fmt(cx) + " &7Z: &f" + fmt(cz)), "", MessageUtils.color("&eClick to set")));
 
-        inv.setItem(14, pane(Material.CYAN_STAINED_GLASS_PANE,
-                ChatColor.AQUA + "TRANSITION",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + trans + "s",
-                ChatColor.DARK_GRAY + "Click to change."));
-
-        inv.setItem(16, pane(fixed ? Material.PURPLE_STAINED_GLASS_PANE : Material.BLUE_STAINED_GLASS_PANE,
-                ChatColor.LIGHT_PURPLE + "CENTER MODE",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + mode.toUpperCase(),
-                ChatColor.DARK_GRAY + "Click to toggle SPAWN / FIXED."));
-
-        if (fixed) {
-            double cx = plugin.getConfigManager().getBorderCenterX();
-            double cz = plugin.getConfigManager().getBorderCenterZ();
-            inv.setItem(21, pane(Material.MAGENTA_STAINED_GLASS_PANE,
-                    ChatColor.LIGHT_PURPLE + "FIXED COORDS",
-                    ChatColor.DARK_GRAY + "X  " + ChatColor.GRAY + cx,
-                    ChatColor.DARK_GRAY + "Z  " + ChatColor.GRAY + cz,
-                    ChatColor.DARK_GRAY + "Click to set new X (then Z)."));
-        }
-
-        inv.setItem(27 + 8, pane(PANE_ACCENT,
-                ChatColor.GRAY + "BACK",
-                ChatColor.DARK_GRAY + "Return to main menu."));
-
-        openMenus.put(player.getUniqueId(), TITLE_BORDER);
+        inv.setItem(40, pane(Material.ARROW, MessageUtils.color("&c&lBACK")));
         player.openInventory(inv);
+        openMenus.put(player.getUniqueId(), TITLE_BORDER);
     }
-
-    // =========================================================================
-    //  PVP MENU  (27 slots)
-    // =========================================================================
 
     public void openPvpMenu(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 27, TITLE_PVP);
-        fill(inv, PANE_DARK, 0,1,2,3,4,5,6,7,8);
-        fill(inv, PANE_DARK, 18,19,20,21,22,23,24,25,26);
-        fill(inv, PANE_DARK, 9,17);
+        Inventory inv = Bukkit.createInventory(null, 45, TITLE_PVP);
+        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);
 
         int pvp = plugin.getConfigManager().getPvpProtectionDuration();
-        inv.setItem(13, pane(Material.RED_STAINED_GLASS_PANE,
-                ChatColor.RED + "PROTECTION DURATION",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + pvp + " min",
-                ChatColor.DARK_GRAY + "Set 0 to disable.",
-                ChatColor.DARK_GRAY + "Click to change."));
+        boolean blocks = plugin.getConfigManager().isPreStartBlockProtectionEnabled();
 
-        inv.setItem(16, pane(PANE_ACCENT,
-                ChatColor.GRAY + "BACK",
-                ChatColor.DARK_GRAY + "Return to main menu."));
+        inv.setItem(21, pane(Material.SHIELD, MessageUtils.color("&#00FBFF&lPVP PROTECTION"), MessageUtils.color("&7Duration: &f" + pvp + " min"), "", MessageUtils.color("&eClick to change")));
+        inv.setItem(23, pane(blocks ? Material.IRON_BLOCK : Material.COBBLESTONE, MessageUtils.color("&#00FBFF&lBLOCK PROTECTION"), MessageUtils.color("&7Status: " + (blocks ? "&aEnabled" : "&cDisabled")), "", MessageUtils.color("&eClick to toggle")));
 
-        openMenus.put(player.getUniqueId(), TITLE_PVP);
+        inv.setItem(40, pane(Material.ARROW, MessageUtils.color("&c&lBACK")));
         player.openInventory(inv);
+        openMenus.put(player.getUniqueId(), TITLE_PVP);
     }
-
-    // =========================================================================
-    //  REMINDERS MENU  (27 slots)
-    // =========================================================================
 
     public void openRemindersMenu(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 27, TITLE_REMINDERS);
-        fill(inv, PANE_DARK, 0,1,2,3,4,5,6,7,8);
-        fill(inv, PANE_DARK, 18,19,20,21,22,23,24,25,26);
-        fill(inv, PANE_DARK, 9,17);
+        Inventory inv = Bukkit.createInventory(null, 45, TITLE_REMINDERS);
+        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);
 
-        boolean en  = plugin.getConfigManager().areJoinRemindersEnabled();
-        int interval = plugin.getConfigManager().getReminderInterval();
+        boolean en = plugin.getConfigManager().areJoinRemindersEnabled();
+        int iv = plugin.getConfigManager().getReminderInterval();
 
-        inv.setItem(11, pane(en ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE,
-                ChatColor.WHITE + "JOIN REMINDERS",
-                ChatColor.DARK_GRAY + "» " + (en ? ChatColor.GREEN + "ENABLED" : ChatColor.RED + "DISABLED"),
-                ChatColor.DARK_GRAY + "Click to toggle."));
+        inv.setItem(21, pane(en ? Material.LIME_DYE : Material.GRAY_DYE, MessageUtils.color("&#00FBFF&lENABLED"), MessageUtils.color("&7Status: " + (en ? "&aYes" : "&cNo")), "", MessageUtils.color("&eClick to toggle")));
+        inv.setItem(23, pane(Material.CLOCK, MessageUtils.color("&#00FBFF&lINTERVAL"), MessageUtils.color("&7Every: &f" + iv + "s"), "", MessageUtils.color("&eClick to change")));
 
-        inv.setItem(13, pane(Material.ORANGE_STAINED_GLASS_PANE,
-                ChatColor.GOLD + "REMINDER INTERVAL",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + interval + "s",
-                ChatColor.DARK_GRAY + "Click to change."));
-
-        inv.setItem(16, pane(PANE_ACCENT,
-                ChatColor.GRAY + "BACK",
-                ChatColor.DARK_GRAY + "Return to main menu."));
-
-        openMenus.put(player.getUniqueId(), TITLE_REMINDERS);
+        inv.setItem(40, pane(Material.ARROW, MessageUtils.color("&c&lBACK")));
         player.openInventory(inv);
+        openMenus.put(player.getUniqueId(), TITLE_REMINDERS);
     }
-
-    // =========================================================================
-    //  PHASES MENU  (45 slots — 5 rows)
-    // =========================================================================
 
     public void openPhasesMenu(Player player) {
         Inventory inv = Bukkit.createInventory(null, 45, TITLE_PHASES);
-        fill(inv, PANE_DARK, 0,1,2,3,4,5,6,7,8);
-        fill(inv, PANE_DARK, 36,37,38,39,40,41,42,43,44);
-        fill(inv, PANE_DARK, 9,17,18,26,27,35);
+        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);
 
-        // ── Pre-start column (slots 10-16 area) ───────────────────────────────
-        inv.setItem(10, pane(PANE_ACCENT, ChatColor.DARK_GRAY + "PRE-START PHASE"));
+        String d1 = plugin.getConfigManager().getStartingDifficulty();
+        String d2 = plugin.getConfigManager().getStartedDifficulty();
+        boolean m1 = plugin.getConfigManager().isStartingDisableMobSpawning();
+        boolean m2 = plugin.getConfigManager().isStartedDisableMobSpawning();
+        boolean md1 = plugin.getConfigManager().isStartingDisableMobDamage();
+        boolean md2 = plugin.getConfigManager().isStartedDisableMobDamage();
+        int min = plugin.getConfigManager().getMinOnlinePlayers();
 
-        String preDiff = plugin.getConfigManager().getStartingDifficulty();
-        inv.setItem(11, pane(Material.YELLOW_STAINED_GLASS_PANE,
-                ChatColor.YELLOW + "DIFFICULTY",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + preDiff.toUpperCase(),
-                ChatColor.DARK_GRAY + "Click to cycle."));
+        inv.setItem(10, pane(Material.SUNFLOWER, MessageUtils.color("&#00FBFF&lPRE-START DIFF"), MessageUtils.color("&7Current: &f" + d1), "", MessageUtils.color("&eClick to cycle")));
+        inv.setItem(11, pane(m1 ? Material.SPAWNER : Material.ZOMBIE_HEAD, MessageUtils.color("&#00FBFF&lPRE-START MOBS"), MessageUtils.color("&7Spawn: " + (!m1 ? "&aOn" : "&cOff")), "", MessageUtils.color("&eClick to toggle")));
+        inv.setItem(12, pane(md1 ? Material.CHAINMAIL_CHESTPLATE : Material.IRON_SWORD, MessageUtils.color("&#00FBFF&lPRE-START DAMAGE"), MessageUtils.color("&7Mob Dmg: " + (!md1 ? "&aOn" : "&cOff")), "", MessageUtils.color("&eClick to toggle")));
 
-        boolean preMobs = plugin.getConfigManager().isStartingDisableMobSpawning();
-        inv.setItem(12, pane(preMobs ? Material.RED_STAINED_GLASS_PANE : Material.LIME_STAINED_GLASS_PANE,
-                ChatColor.WHITE + "MOB SPAWNING",
-                ChatColor.DARK_GRAY + "» " + (preMobs ? ChatColor.RED + "DISABLED" : ChatColor.GREEN + "ENABLED"),
-                ChatColor.DARK_GRAY + "Click to toggle."));
+        inv.setItem(14, pane(Material.DIAMOND_SWORD, MessageUtils.color("&#00FBFF&lSTARTED DIFF"), MessageUtils.color("&7Current: &f" + d2), "", MessageUtils.color("&eClick to cycle")));
+        inv.setItem(15, pane(m2 ? Material.SPAWNER : Material.ZOMBIE_HEAD, MessageUtils.color("&#00FBFF&lSTARTED MOBS"), MessageUtils.color("&7Spawn: " + (!m2 ? "&aOn" : "&cOff")), "", MessageUtils.color("&eClick to toggle")));
+        inv.setItem(16, pane(md2 ? Material.CHAINMAIL_CHESTPLATE : Material.IRON_SWORD, MessageUtils.color("&#00FBFF&lSTARTED DAMAGE"), MessageUtils.color("&7Mob Dmg: " + (!md2 ? "&aOn" : "&cOff")), "", MessageUtils.color("&eClick to toggle")));
 
-        boolean preDmg = plugin.getConfigManager().isStartingDisableMobDamage();
-        inv.setItem(13, pane(preDmg ? Material.RED_STAINED_GLASS_PANE : Material.LIME_STAINED_GLASS_PANE,
-                ChatColor.WHITE + "MOB DAMAGE",
-                ChatColor.DARK_GRAY + "» " + (preDmg ? ChatColor.RED + "DISABLED" : ChatColor.GREEN + "ENABLED"),
-                ChatColor.DARK_GRAY + "Click to toggle."));
+        inv.setItem(31, pane(Material.PLAYER_HEAD, MessageUtils.color("&#00FBFF&lMIN PLAYERS"), MessageUtils.color("&7Required: &f" + min), "", MessageUtils.color("&eClick to change")));
 
-        // ── Divider ───────────────────────────────────────────────────────────
-        fill(inv, PANE_DARK, 19, 28);
-
-        // ── Started column ────────────────────────────────────────────────────
-        inv.setItem(21, pane(PANE_ACCENT, ChatColor.DARK_GRAY + "STARTED PHASE"));
-
-        String startedDiff = plugin.getConfigManager().getStartedDifficulty();
-        inv.setItem(22, pane(Material.YELLOW_STAINED_GLASS_PANE,
-                ChatColor.YELLOW + "DIFFICULTY",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + startedDiff.toUpperCase(),
-                ChatColor.DARK_GRAY + "Click to cycle."));
-
-        boolean startedMobs = plugin.getConfigManager().isStartedDisableMobSpawning();
-        inv.setItem(23, pane(startedMobs ? Material.RED_STAINED_GLASS_PANE : Material.LIME_STAINED_GLASS_PANE,
-                ChatColor.WHITE + "MOB SPAWNING",
-                ChatColor.DARK_GRAY + "» " + (startedMobs ? ChatColor.RED + "DISABLED" : ChatColor.GREEN + "ENABLED"),
-                ChatColor.DARK_GRAY + "Click to toggle."));
-
-        boolean startedDmg = plugin.getConfigManager().isStartedDisableMobDamage();
-        inv.setItem(24, pane(startedDmg ? Material.RED_STAINED_GLASS_PANE : Material.LIME_STAINED_GLASS_PANE,
-                ChatColor.WHITE + "MOB DAMAGE",
-                ChatColor.DARK_GRAY + "» " + (startedDmg ? ChatColor.RED + "DISABLED" : ChatColor.GREEN + "ENABLED"),
-                ChatColor.DARK_GRAY + "Click to toggle."));
-
-        // ── Min players ───────────────────────────────────────────────────────
-        int minP = plugin.getConfigManager().getMinOnlinePlayers();
-        inv.setItem(31, pane(Material.CYAN_STAINED_GLASS_PANE,
-                ChatColor.AQUA + "MIN PLAYERS",
-                ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + minP,
-                ChatColor.DARK_GRAY + "Required to start.",
-                ChatColor.DARK_GRAY + "Click to change."));
-
-        inv.setItem(44, pane(PANE_ACCENT,
-                ChatColor.GRAY + "BACK",
-                ChatColor.DARK_GRAY + "Return to main menu."));
-
-        openMenus.put(player.getUniqueId(), TITLE_PHASES);
+        inv.setItem(40, pane(Material.ARROW, MessageUtils.color("&c&lBACK")));
         player.openInventory(inv);
+        openMenus.put(player.getUniqueId(), TITLE_PHASES);
     }
 
     // =========================================================================
-    //  CLICK HANDLERS
+    //  EVENTS
     // =========================================================================
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        openMenus.remove(event.getPlayer().getUniqueId());
+    }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
@@ -394,209 +195,137 @@ public class ConfigMenuManager implements Listener {
 
         event.setCancelled(true);
         ItemStack item = event.getCurrentItem();
-        if (item == null || item.getType() == Material.AIR) return;
-        if (item.getType() == PANE_DARK) return;
+        if (item == null || item.getType().isAir()) return;
 
-        int slot = event.getSlot();
-        if      (title.equals(TITLE_MAIN))      handleMain(player, slot);
-        else if (title.equals(TITLE_COUNTDOWN)) handleCountdown(player, slot);
-        else if (title.equals(TITLE_BORDER))    handleBorder(player, slot);
-        else if (title.equals(TITLE_PVP))       handlePvp(player, slot);
-        else if (title.equals(TITLE_REMINDERS)) handleReminders(player, slot);
-        else if (title.equals(TITLE_PHASES))    handlePhases(player, slot);
+        int slot = event.getRawSlot();
+        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+
+        if (title.equals(TITLE_MAIN)) handleMainClick(player, slot);
+        else if (title.equals(TITLE_COUNTDOWN)) handleCountdownClick(player, slot);
+        else if (title.equals(TITLE_BORDER)) handleBorderClick(player, slot);
+        else if (title.equals(TITLE_PVP)) handlePvpClick(player, slot);
+        else if (title.equals(TITLE_REMINDERS)) handleRemindersClick(player, slot);
+        else if (title.equals(TITLE_PHASES)) handlePhasesClick(player, slot);
     }
 
-    @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
-        PlayerMenuState ms = menuStates.get(player.getUniqueId());
-        if (ms == null || !ms.isAwaitingInput()) openMenus.remove(player.getUniqueId());
-    }
-
-    // ── Main ──────────────────────────────────────────────────────────────────
-
-    private void handleMain(Player player, int slot) {
+    private void handleMainClick(Player player, int slot) {
         switch (slot) {
-            case SLOT_START -> {
+            case 11 -> openCountdownMenu(player);
+            case 13 -> openBorderMenu(player);
+            case 15 -> openPvpMenu(player);
+            case 29 -> openRemindersMenu(player);
+            case 31 -> openPhasesMenu(player);
+            case 22 -> {
                 player.closeInventory();
-                if (!plugin.getStateManager().canExecuteStart()) {
-                    player.sendMessage(ChatColor.RED + "Cannot start right now."); return;
-                }
-                int minP = plugin.getConfigManager().getMinOnlinePlayers();
-                int on   = Bukkit.getOnlinePlayers().size();
-                if (minP > 0 && on < minP) {
-                    player.sendMessage(ChatColor.RED + "Need " + minP + " players, have " + on + "."); return;
-                }
-                plugin.getStateManager().startCountdown();
-                plugin.getServer().broadcastMessage(ChatColor.GREEN + "SMP countdown started by " + ChatColor.WHITE + player.getName() + ChatColor.GREEN + "!");
+                PluginState state = plugin.getStateManager().getCurrentState();
+                boolean smpStarted = isSmpStarted();
+                if (state == PluginState.IDLE && !smpStarted) player.performCommand("smp start");
+                else if (state == PluginState.COUNTDOWN) player.performCommand("smp cancel");
+                else player.performCommand("smp reset");
             }
-            case SLOT_CANCEL -> {
-                player.closeInventory();
-                if (!plugin.getStateManager().cancelCountdown())
-                    player.sendMessage(ChatColor.YELLOW + "No active countdown.");
-                else
-                    plugin.getServer().broadcastMessage(ChatColor.RED + "Countdown cancelled by " + ChatColor.WHITE + player.getName() + ChatColor.RED + ".");
-            }
-            case SLOT_RESET -> {
-                player.closeInventory();
-                plugin.getStateManager().resetSmp();
-                plugin.getServer().broadcastMessage(ChatColor.RED + "SMP reset by " + ChatColor.WHITE + player.getName() + ChatColor.RED + ".");
-            }
-            case SLOT_RELOAD -> {
-                plugin.getConfigManager().reloadConfig();
-                player.sendMessage(ChatColor.GREEN + "Config reloaded.");
-                openMainMenu(player);
-            }
-            case SLOT_CAT_COUNTDOWN -> openCountdownMenu(player);
-            case SLOT_CAT_BORDER    -> openBorderMenu(player);
-            case SLOT_CAT_PVP       -> openPvpMenu(player);
-            case SLOT_CAT_REMINDERS -> openRemindersMenu(player);
-            case SLOT_CAT_PHASES    -> openPhasesMenu(player);
         }
     }
 
-    // ── Countdown ─────────────────────────────────────────────────────────────
-
-    private void handleCountdown(Player player, int slot) {
+    private void handleCountdownClick(Player player, int slot) {
         switch (slot) {
-            case 10 -> prompt(player, PlayerMenuState.InputMode.COUNTDOWN_DURATION,
-                    ChatColor.YELLOW + "Enter countdown duration in seconds:");
-            case 12 -> prompt(player, PlayerMenuState.InputMode.COOLDOWN_DURATION,
-                    ChatColor.YELLOW + "Enter cooldown duration in seconds:");
-            case 14 -> {
+            case 20 -> prompt(player, PlayerMenuState.InputMode.COUNTDOWN_DURATION, MessageUtils.color("&#00FBFF&l» &fEnter countdown duration in seconds:"));
+            case 22 -> prompt(player, PlayerMenuState.InputMode.COOLDOWN_DURATION, MessageUtils.color("&#00FBFF&l» &fEnter cooldown duration in seconds:"));
+            case 24 -> {
                 boolean cur = plugin.getConfigManager().isCountdownBossBarEnabled();
                 plugin.getConfigManager().setCountdownBossBarEnabled(!cur);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Boss bar " + (!cur ? "enabled" : "disabled") + ".");
                 openCountdownMenu(player);
             }
-            case 16 -> openMainMenu(player);
+            case 40 -> openMainMenu(player);
         }
     }
 
-    // ── Border ────────────────────────────────────────────────────────────────
-
-    private void handleBorder(Player player, int slot) {
+    private void handleBorderClick(Player player, int slot) {
         switch (slot) {
-            case 10 -> prompt(player, PlayerMenuState.InputMode.PRE_BORDER_SIZE,
-                    ChatColor.YELLOW + "Enter pre-start border size in blocks:");
-            case 12 -> prompt(player, PlayerMenuState.InputMode.FINAL_BORDER_SIZE,
-                    ChatColor.YELLOW + "Enter final border size in blocks:");
-            case 14 -> prompt(player, PlayerMenuState.InputMode.BORDER_TRANSITION,
-                    ChatColor.YELLOW + "Enter border transition duration in seconds:");
-            case 16 -> {
-                String cur  = plugin.getConfigManager().getBorderCenterMode();
-                String next = "fixed".equalsIgnoreCase(cur) ? "spawn" : "fixed";
-                plugin.getConfigManager().setBorderCenterMode(next);
+            case 11 -> prompt(player, PlayerMenuState.InputMode.PRE_BORDER_SIZE, MessageUtils.color("&#00FBFF&l» &fEnter pre-start border size (blocks):"));
+            case 13 -> prompt(player, PlayerMenuState.InputMode.FINAL_BORDER_SIZE, MessageUtils.color("&#00FBFF&l» &fEnter final border size (blocks):"));
+            case 15 -> prompt(player, PlayerMenuState.InputMode.BORDER_TRANSITION, MessageUtils.color("&#00FBFF&l» &fEnter expansion time in seconds:"));
+            case 29 -> {
+                String cur = plugin.getConfigManager().getBorderCenterMode();
+                plugin.getConfigManager().setBorderCenterMode(cur.equals("spawn") ? "fixed" : "spawn");
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Border center set to " + next + ".");
                 openBorderMenu(player);
             }
-            case 21 -> prompt(player, PlayerMenuState.InputMode.BORDER_CENTER_X,
-                    ChatColor.YELLOW + "Enter border center X coordinate:");
-            case 35 -> openMainMenu(player);
+            case 31 -> prompt(player, PlayerMenuState.InputMode.BORDER_CENTER_X, MessageUtils.color("&#00FBFF&l» &fEnter center X coordinate:"));
+            case 40 -> openMainMenu(player);
         }
     }
 
-    // ── PvP ───────────────────────────────────────────────────────────────────
-
-    private void handlePvp(Player player, int slot) {
+    private void handlePvpClick(Player player, int slot) {
         switch (slot) {
-            case 13 -> prompt(player, PlayerMenuState.InputMode.PVP_DURATION,
-                    ChatColor.YELLOW + "Enter PvP protection duration in minutes (0 = off):");
-            case 16 -> openMainMenu(player);
+            case 21 -> prompt(player, PlayerMenuState.InputMode.PVP_DURATION, MessageUtils.color("&#00FBFF&l» &fEnter PvP protection duration (minutes):"));
+            case 23 -> {
+                boolean cur = plugin.getConfigManager().isPreStartBlockProtectionEnabled();
+                plugin.getConfigManager().setPreStartBlockProtectionEnabled(!cur);
+                plugin.getConfigManager().saveConfig();
+                openPvpMenu(player);
+            }
+            case 40 -> openMainMenu(player);
         }
     }
 
-    // ── Reminders ─────────────────────────────────────────────────────────────
-
-    private void handleReminders(Player player, int slot) {
+    private void handleRemindersClick(Player player, int slot) {
         switch (slot) {
-            case 11 -> {
+            case 21 -> {
                 boolean cur = plugin.getConfigManager().areJoinRemindersEnabled();
                 plugin.getConfigManager().setJoinRemindersEnabled(!cur);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Join reminders " + (!cur ? "enabled" : "disabled") + ".");
                 openRemindersMenu(player);
             }
-            case 13 -> prompt(player, PlayerMenuState.InputMode.REMINDER_INTERVAL,
-                    ChatColor.YELLOW + "Enter reminder interval in seconds:");
-            case 16 -> openMainMenu(player);
+            case 23 -> prompt(player, PlayerMenuState.InputMode.REMINDER_INTERVAL, MessageUtils.color("&#00FBFF&l» &fEnter reminder interval in seconds:"));
+            case 40 -> openMainMenu(player);
         }
     }
 
-    // ── Phases ────────────────────────────────────────────────────────────────
-
-    private void handlePhases(Player player, int slot) {
+    private void handlePhasesClick(Player player, int slot) {
         switch (slot) {
-            // Pre-start difficulty
+            case 10 -> {
+                String cur = plugin.getConfigManager().getStartingDifficulty();
+                plugin.getConfigManager().setPhaseDifficulties(cycleDiff(cur), plugin.getConfigManager().getStartedDifficulty());
+                plugin.getConfigManager().saveConfig();
+                openPhasesMenu(player);
+            }
             case 11 -> {
-                String next = cycleDiff(plugin.getConfigManager().getStartingDifficulty());
-                plugin.getConfigManager().setPhaseDifficulties(next, plugin.getConfigManager().getStartedDifficulty());
-                plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Pre-start difficulty → " + next + ".");
-                openPhasesMenu(player);
-            }
-            // Pre-start mob spawning
-            case 12 -> {
                 boolean cur = plugin.getConfigManager().isStartingDisableMobSpawning();
-                plugin.getConfigManager().setPhaseMobProtection(!cur,
-                        plugin.getConfigManager().isStartedDisableMobSpawning(),
-                        plugin.getConfigManager().isStartingDisableMobDamage(),
-                        plugin.getConfigManager().isStartedDisableMobDamage());
+                plugin.getConfigManager().setPhaseMobProtection(!cur, plugin.getConfigManager().isStartedDisableMobSpawning(),
+                        plugin.getConfigManager().isStartingDisableMobDamage(), plugin.getConfigManager().isStartedDisableMobDamage());
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Pre-start mob spawning " + (!cur ? "disabled" : "enabled") + ".");
                 openPhasesMenu(player);
             }
-            // Pre-start mob damage
-            case 13 -> {
+            case 12 -> {
                 boolean cur = plugin.getConfigManager().isStartingDisableMobDamage();
-                plugin.getConfigManager().setPhaseMobProtection(
-                        plugin.getConfigManager().isStartingDisableMobSpawning(),
-                        plugin.getConfigManager().isStartedDisableMobSpawning(),
-                        !cur,
-                        plugin.getConfigManager().isStartedDisableMobDamage());
+                plugin.getConfigManager().setPhaseMobProtection(plugin.getConfigManager().isStartingDisableMobSpawning(),
+                        plugin.getConfigManager().isStartedDisableMobSpawning(), !cur, plugin.getConfigManager().isStartedDisableMobDamage());
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Pre-start mob damage " + (!cur ? "disabled" : "enabled") + ".");
                 openPhasesMenu(player);
             }
-            // Started difficulty
-            case 22 -> {
-                String next = cycleDiff(plugin.getConfigManager().getStartedDifficulty());
-                plugin.getConfigManager().setPhaseDifficulties(plugin.getConfigManager().getStartingDifficulty(), next);
+            case 14 -> {
+                String cur = plugin.getConfigManager().getStartedDifficulty();
+                plugin.getConfigManager().setPhaseDifficulties(plugin.getConfigManager().getStartingDifficulty(), cycleDiff(cur));
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Started difficulty → " + next + ".");
                 openPhasesMenu(player);
             }
-            // Started mob spawning
-            case 23 -> {
+            case 15 -> {
                 boolean cur = plugin.getConfigManager().isStartedDisableMobSpawning();
-                plugin.getConfigManager().setPhaseMobProtection(
-                        plugin.getConfigManager().isStartingDisableMobSpawning(),
-                        !cur,
-                        plugin.getConfigManager().isStartingDisableMobDamage(),
-                        plugin.getConfigManager().isStartedDisableMobDamage());
+                plugin.getConfigManager().setPhaseMobProtection(plugin.getConfigManager().isStartingDisableMobSpawning(),
+                        !cur, plugin.getConfigManager().isStartingDisableMobDamage(), plugin.getConfigManager().isStartedDisableMobDamage());
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Started mob spawning " + (!cur ? "disabled" : "enabled") + ".");
                 openPhasesMenu(player);
             }
-            // Started mob damage
-            case 24 -> {
+            case 16 -> {
                 boolean cur = plugin.getConfigManager().isStartedDisableMobDamage();
-                plugin.getConfigManager().setPhaseMobProtection(
-                        plugin.getConfigManager().isStartingDisableMobSpawning(),
-                        plugin.getConfigManager().isStartedDisableMobSpawning(),
-                        plugin.getConfigManager().isStartingDisableMobDamage(),
-                        !cur);
+                plugin.getConfigManager().setPhaseMobProtection(plugin.getConfigManager().isStartingDisableMobSpawning(),
+                        plugin.getConfigManager().isStartedDisableMobSpawning(), plugin.getConfigManager().isStartingDisableMobDamage(), !cur);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Started mob damage " + (!cur ? "disabled" : "enabled") + ".");
                 openPhasesMenu(player);
             }
-            // Min players
-            case 31 -> prompt(player, PlayerMenuState.InputMode.MIN_PLAYERS,
-                    ChatColor.YELLOW + "Enter minimum players required to start (0 = off):");
-            // Back
-            case 44 -> openMainMenu(player);
+            case 31 -> prompt(player, PlayerMenuState.InputMode.MIN_PLAYERS, MessageUtils.color("&#00FBFF&l» &fEnter min players to start (0=off):"));
+            case 40 -> openMainMenu(player);
         }
     }
 
@@ -620,7 +349,7 @@ public class ConfigMenuManager implements Listener {
 
     private void processChatInput(Player player, PlayerMenuState.InputMode mode, String raw) {
         if (raw.equalsIgnoreCase("cancel")) {
-            player.sendMessage(ChatColor.GRAY + "Cancelled.");
+            MessageUtils.sendInfo(player, "Cancelled.");
             reopen(player);
             return;
         }
@@ -630,42 +359,41 @@ public class ConfigMenuManager implements Listener {
                 Integer v = parseInt(player, raw, 1); if (v == null) { reopen(player); return; }
                 plugin.getConfigManager().setCountdownDuration(v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Countdown duration set to " + v + "s.");
+                MessageUtils.sendSuccess(player, "Countdown duration set to &f" + v + "s&7.");
                 openCountdownMenu(player);
             }
             case COOLDOWN_DURATION -> {
                 Integer v = parseInt(player, raw, 1); if (v == null) { reopen(player); return; }
                 plugin.getConfigManager().setCooldownDuration(v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Cooldown duration set to " + v + "s.");
+                MessageUtils.sendSuccess(player, "Cooldown duration set to &f" + v + "s&7.");
                 openCountdownMenu(player);
             }
             case PRE_BORDER_SIZE -> {
                 Double v = parseDouble(player, raw, 1); if (v == null) { reopen(player); return; }
                 plugin.getConfigManager().setPreStartBorderSize(v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Pre-start border set to " + fmt(v) + " blocks.");
+                MessageUtils.sendSuccess(player, "Pre-start border set to &f" + fmt(v) + " blocks&7.");
                 openBorderMenu(player);
             }
             case FINAL_BORDER_SIZE -> {
                 Double v = parseDouble(player, raw, 1); if (v == null) { reopen(player); return; }
                 plugin.getConfigManager().setFinalBorderSize(v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Final border set to " + fmt(v) + " blocks.");
+                MessageUtils.sendSuccess(player, "Final border set to &f" + fmt(v) + " blocks&7.");
                 openBorderMenu(player);
             }
             case BORDER_TRANSITION -> {
                 Integer v = parseInt(player, raw, 0); if (v == null) { reopen(player); return; }
                 plugin.getConfigManager().setBorderTransitionSeconds(v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Border transition set to " + v + "s.");
+                MessageUtils.sendSuccess(player, "Border transition set to &f" + v + "s&7.");
                 openBorderMenu(player);
             }
             case BORDER_CENTER_X -> {
                 Double v = parseAnyDouble(player, raw); if (v == null) { reopen(player); return; }
                 pendingBorderX.put(player.getUniqueId(), v);
-                prompt(player, PlayerMenuState.InputMode.BORDER_CENTER_Z,
-                        ChatColor.YELLOW + "Now enter the Z coordinate:");
+                prompt(player, PlayerMenuState.InputMode.BORDER_CENTER_Z, MessageUtils.color("&#00FBFF&l» &fNow enter the Z coordinate:"));
             }
             case BORDER_CENTER_Z -> {
                 Double v = parseAnyDouble(player, raw); if (v == null) { reopen(player); return; }
@@ -673,28 +401,28 @@ public class ConfigMenuManager implements Listener {
                 pendingBorderX.remove(player.getUniqueId());
                 plugin.getConfigManager().setBorderCenterPosition(x, v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Border center set to X=" + x + " Z=" + v + ".");
+                MessageUtils.sendSuccess(player, "Border center set to &fX=" + x + " Z=" + v + "&7.");
                 openBorderMenu(player);
             }
             case PVP_DURATION -> {
                 Integer v = parseInt(player, raw, 0); if (v == null) { reopen(player); return; }
                 plugin.getConfigManager().setPvpProtectionDuration(v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "PvP protection set to " + v + " min.");
+                MessageUtils.sendSuccess(player, "PvP protection set to &f" + v + " min&7.");
                 openPvpMenu(player);
             }
             case MIN_PLAYERS -> {
                 Integer v = parseInt(player, raw, 0); if (v == null) { reopen(player); return; }
                 plugin.getConfigManager().setMinOnlinePlayers(v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Min players set to " + v + ".");
+                MessageUtils.sendSuccess(player, "Min players set to &f" + v + "&7.");
                 openPhasesMenu(player);
             }
             case REMINDER_INTERVAL -> {
                 Integer v = parseInt(player, raw, 1); if (v == null) { reopen(player); return; }
                 plugin.getConfigManager().setReminderInterval(v);
                 plugin.getConfigManager().saveConfig();
-                player.sendMessage(ChatColor.GREEN + "Reminder interval set to " + v + "s.");
+                MessageUtils.sendSuccess(player, "Reminder interval set to &f" + v + "s&7.");
                 openRemindersMenu(player);
             }
             default -> reopen(player);
@@ -708,10 +436,10 @@ public class ConfigMenuManager implements Listener {
     private void prompt(Player player, PlayerMenuState.InputMode mode, String msg) {
         player.closeInventory();
         menuStates.computeIfAbsent(player.getUniqueId(), PlayerMenuState::new).setInputMode(mode);
-        player.sendMessage(ChatColor.DARK_GRAY + "                    ");
+        player.sendMessage("");
         player.sendMessage(msg);
-        player.sendMessage(ChatColor.DARK_GRAY + "Type " + ChatColor.GRAY + "cancel" + ChatColor.DARK_GRAY + " to go back.");
-        player.sendMessage(ChatColor.DARK_GRAY + "                    ");
+        player.sendMessage(MessageUtils.color("&7Type &f\"cancel\" &7to go back."));
+        player.sendMessage("");
     }
 
     private void reopen(Player player) {
@@ -725,18 +453,20 @@ public class ConfigMenuManager implements Listener {
         else                                 openMainMenu(player);
     }
 
-    /** Glass pane with display name and optional lore. */
     private ItemStack pane(Material mat, String name, String... lore) {
         ItemStack item = new ItemStack(mat);
         ItemMeta  meta = item.getItemMeta();
         if (meta == null) return item;
         meta.setDisplayName(name);
-        if (lore.length > 0) meta.setLore(Arrays.asList(lore));
+        if (lore.length > 0) {
+            List<String> list = new ArrayList<>();
+            for (String s : lore) list.add(MessageUtils.color(s));
+            meta.setLore(list);
+        }
         item.setItemMeta(meta);
         return item;
     }
 
-    /** Fill specific slots with a plain (unnamed) pane. */
     private void fill(Inventory inv, Material mat, int... slots) {
         ItemStack p = pane(mat, " ");
         for (int s : slots) inv.setItem(s, p);
@@ -762,7 +492,6 @@ public class ConfigMenuManager implements Listener {
         };
     }
 
-    /** Format a double — show as int if it has no fractional part. */
     private String fmt(double v) {
         return v == Math.floor(v) ? String.valueOf((long) v) : String.valueOf(v);
     }
@@ -770,10 +499,10 @@ public class ConfigMenuManager implements Listener {
     private Integer parseInt(Player p, String s, int min) {
         try {
             int v = Integer.parseInt(s);
-            if (v < min) { p.sendMessage(ChatColor.RED + "Must be at least " + min + "."); return null; }
+            if (v < min) { MessageUtils.sendError(p, "Must be at least &f" + min + "&7."); return null; }
             return v;
         } catch (NumberFormatException e) {
-            p.sendMessage(ChatColor.RED + "Invalid number: " + s);
+            MessageUtils.sendError(p, "Invalid number: &f" + s);
             return null;
         }
     }
@@ -781,16 +510,16 @@ public class ConfigMenuManager implements Listener {
     private Double parseDouble(Player p, String s, double min) {
         try {
             double v = Double.parseDouble(s);
-            if (v < min) { p.sendMessage(ChatColor.RED + "Must be at least " + min + "."); return null; }
+            if (v < min) { MessageUtils.sendError(p, "Must be at least &f" + min + "&7."); return null; }
             return v;
         } catch (NumberFormatException e) {
-            p.sendMessage(ChatColor.RED + "Invalid number: " + s);
+            MessageUtils.sendError(p, "Invalid number: &f" + s);
             return null;
         }
     }
 
     private Double parseAnyDouble(Player p, String s) {
         try { return Double.parseDouble(s); }
-        catch (NumberFormatException e) { p.sendMessage(ChatColor.RED + "Invalid number: " + s); return null; }
+        catch (NumberFormatException e) { MessageUtils.sendError(p, "Invalid number: &f" + s); return null; }
     }
 }

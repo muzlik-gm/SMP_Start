@@ -2,6 +2,7 @@ package com.muzlik.smpstart.commands;
 
 import org.bukkit.command.CommandSender;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -13,6 +14,13 @@ public interface SubCommand {
      * The subcommand name (e.g. "start", "cancel").
      */
     String getName();
+
+    /**
+     * Aliases for the subcommand.
+     */
+    default List<String> getAliases() {
+        return Collections.emptyList();
+    }
 
     /**
      * The permission node required to run this subcommand.

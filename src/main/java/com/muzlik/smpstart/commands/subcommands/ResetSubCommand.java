@@ -2,7 +2,8 @@ package com.muzlik.smpstart.commands.subcommands;
 
 import com.muzlik.smpstart.SMPStartPlugin;
 import com.muzlik.smpstart.commands.SubCommand;
-import org.bukkit.ChatColor;
+import com.muzlik.smpstart.utils.MessageUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 import java.util.Collections;
@@ -27,9 +28,7 @@ public class ResetSubCommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         plugin.getStateManager().resetSmp();
-        plugin.getServer().broadcastMessage(
-                ChatColor.RED + "SMP has been reset by " +
-                ChatColor.WHITE + sender.getName() + ChatColor.RED + ".");
+        Bukkit.broadcastMessage(MessageUtils.color("&#00FBFF&lSMP » &#FF5555SMP has been reset by &f" + sender.getName() + "&FF5555."));
         return true;
     }
 
