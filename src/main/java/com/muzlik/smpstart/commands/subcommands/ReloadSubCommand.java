@@ -4,7 +4,7 @@ import com.muzlik.smpstart.SMPStartPlugin;
 import com.muzlik.smpstart.commands.SubCommand;
 import com.muzlik.smpstart.state.StateManager.PluginState;
 import com.muzlik.smpstart.state.StateManagerImpl;
-import org.bukkit.ChatColor;
+import com.muzlik.smpstart.utils.MessageUtils;
 import org.bukkit.command.CommandSender;
 
 import java.util.Collections;
@@ -22,6 +22,7 @@ public class ReloadSubCommand implements SubCommand {
     }
 
     @Override public String getName()        { return "reload"; }
+    @Override public List<String> getAliases() { return List.of("rl"); }
     @Override public String getPermission()  { return "smpstart.reload"; }
     @Override public String getUsage()       { return "reload"; }
     @Override public String getDescription() { return "Reload the plugin configuration."; }
@@ -29,7 +30,7 @@ public class ReloadSubCommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         plugin.getConfigManager().reloadConfig();
-        sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
+        MessageUtils.sendSuccess(sender, "Configuration reloaded.");
 
         if (plugin.getReminderSystem() != null && plugin.getStateManager() != null) {
             boolean smpStarted = false;

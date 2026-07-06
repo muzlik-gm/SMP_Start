@@ -2,6 +2,7 @@ package com.muzlik.smpstart.commands;
 
 import com.muzlik.smpstart.SMPStartPlugin;
 import com.muzlik.smpstart.commands.subcommands.*;
+import com.muzlik.smpstart.utils.MessageUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -18,6 +19,7 @@ public class CommandManagerImpl implements CommandManager {
 
     private final SMPStartPlugin plugin;
     private final Map<String, SubCommand> subCommands = new LinkedHashMap<>();
+    private final Map<String, String> aliases = new HashMap<>();
 
     public CommandManagerImpl(SMPStartPlugin plugin) {
         this.plugin = plugin;
@@ -43,11 +45,15 @@ public class CommandManagerImpl implements CommandManager {
             plugin.getLogger().severe("Command 'smp' not found in plugin.yml!");
         }
 
-        plugin.getLogger().info("Registered /smp with " + subCommands.size() + " subcommands.");
+        plugin.getLogger().info("Registered /smp with " + subCommands.size() + " subcommands and " + aliases.size() + " aliases.");
     }
 
     private void register(SubCommand sub) {
-        subCommands.put(sub.getName().toLowerCase(), sub);
+        String name = sub.getName().toLowerCase();
+        subCommands.put(name, sub);
+        for (String alias : sub.getAliases()) {
+            aliases.put(alias.toLowerCase(), name);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -65,7 +71,8 @@ public class CommandManagerImpl implements CommandManager {
             return true;
         }
 
-        String subName = args[0].toLowerCase();
+        String input = args[0].toLowerCase();
+        String subName = aliases.getOrDefault(input, input);
 
         if (subName.equals("help")) {
             showHelp(sender);
@@ -74,19 +81,24 @@ public class CommandManagerImpl implements CommandManager {
 
         SubCommand sub = subCommands.get(subName);
         if (sub == null) {
-            sender.sendMessage(ChatColor.RED + "Unknown subcommand: " + subName +
-                    ". Run /smp help for a list.");
+            MessageUtils.sendError(sender, "Unknown subcommand: &f" + input + "&7. Run &f/smp help &7for a list.");
             return true;
         }
 
         if (!sender.hasPermission(sub.getPermission())) {
-            sender.sendMessage(ChatColor.RED + "You don't have permission to do that.");
+            MessageUtils.sendError(sender, "You don't have permission to do that.");
             return true;
         }
 
         // Pass remaining args (everything after the subcommand name)
         String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
-        return sub.execute(sender, subArgs);
+        try {
+            return sub.execute(sender, subArgs);
+        } catch (Exception e) {
+            MessageUtils.sendError(sender, "An error occurred while executing that command.");
+            plugin.getErrorHandler().handleException("Command: " + subName, e);
+            return true;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -99,15 +111,21 @@ public class CommandManagerImpl implements CommandManager {
             List<String> names = new ArrayList<>();
             names.add("help");
             subCommands.forEach((name, sub) -> {
-                if (sender.hasPermission(sub.getPermission())) names.add(name);
+                if (sender.hasPermission(sub.getPermission())) {
+                    names.add(name);
+                    names.addAll(sub.getAliases());
+                }
             });
             return names.stream()
                     .filter(n -> n.startsWith(args[0].toLowerCase()))
+                    .sorted()
                     .collect(Collectors.toList());
         }
 
         if (args.length >= 2) {
-            SubCommand sub = subCommands.get(args[0].toLowerCase());
+            String input = args[0].toLowerCase();
+            String subName = aliases.getOrDefault(input, input);
+            SubCommand sub = subCommands.get(subName);
             if (sub != null && sender.hasPermission(sub.getPermission())) {
                 return sub.tabComplete(sender, Arrays.copyOfRange(args, 1, args.length));
             }
@@ -122,16 +140,18 @@ public class CommandManagerImpl implements CommandManager {
 
     @Override
     public void showHelp(CommandSender sender) {
-        sender.sendMessage(ChatColor.GOLD + "--- Muzlik's SMP Starter ---");
-        sender.sendMessage(ChatColor.GRAY + "Usage: " + ChatColor.WHITE + "/smp <subcommand>");
-        sender.sendMessage("");
+        MessageUtils.sendRawMessage(sender, "");
+        MessageUtils.sendRawMessage(sender, "&#00FBFF&lMUZLIK'S SMP STARTER &7- &fCommands");
+        MessageUtils.sendRawMessage(sender, "");
         subCommands.forEach((name, sub) -> {
             if (sender.hasPermission(sub.getPermission())) {
-                sender.sendMessage(ChatColor.YELLOW + "/smp " + sub.getUsage() +
-                        ChatColor.GRAY + " — " + ChatColor.WHITE + sub.getDescription());
+                String aliasesStr = sub.getAliases().isEmpty() ? "" : " &7(" + String.join(", ", sub.getAliases()) + ")";
+                MessageUtils.sendRawMessage(sender, " &#00FBFF» &b/smp " + sub.getUsage() + aliasesStr);
+                MessageUtils.sendRawMessage(sender, "   &8└ &f" + sub.getDescription());
             }
         });
-        sender.sendMessage(ChatColor.YELLOW + "/smp help" +
-                ChatColor.GRAY + " — " + ChatColor.WHITE + "Show this help menu.");
+        MessageUtils.sendRawMessage(sender, " &#00FBFF» &b/smp help");
+        MessageUtils.sendRawMessage(sender, "   &8└ &fShow this help menu.");
+        MessageUtils.sendRawMessage(sender, "");
     }
 }

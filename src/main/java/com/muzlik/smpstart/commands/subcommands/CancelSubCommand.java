@@ -2,7 +2,8 @@ package com.muzlik.smpstart.commands.subcommands;
 
 import com.muzlik.smpstart.SMPStartPlugin;
 import com.muzlik.smpstart.commands.SubCommand;
-import org.bukkit.ChatColor;
+import com.muzlik.smpstart.utils.MessageUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 import java.util.Collections;
@@ -20,6 +21,7 @@ public class CancelSubCommand implements SubCommand {
     }
 
     @Override public String getName()        { return "cancel"; }
+    @Override public List<String> getAliases() { return List.of("stop"); }
     @Override public String getPermission()  { return "smpstart.cancel"; }
     @Override public String getUsage()       { return "cancel"; }
     @Override public String getDescription() { return "Cancel the active countdown."; }
@@ -27,12 +29,10 @@ public class CancelSubCommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (!plugin.getStateManager().cancelCountdown()) {
-            sender.sendMessage(ChatColor.YELLOW + "No active countdown to cancel.");
+            MessageUtils.sendInfo(sender, "No active countdown to cancel.");
             return true;
         }
-        plugin.getServer().broadcastMessage(
-                ChatColor.RED + "SMP countdown cancelled by " +
-                ChatColor.WHITE + sender.getName() + ChatColor.RED + ".");
+        Bukkit.broadcastMessage(MessageUtils.color("&#00FBFF&lSMP » &#FF5555Countdown cancelled by &f" + sender.getName() + "&FF5555."));
         return true;
     }
 

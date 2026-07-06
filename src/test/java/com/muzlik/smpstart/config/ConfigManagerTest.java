@@ -97,6 +97,10 @@ class ConfigManagerTest {
             public int getPvpProtectionDuration() { return 0; }
             @Override
             public void setPvpProtectionDuration(int duration) {}
+            @Override
+            public boolean isPreStartBlockProtectionEnabled() { return true; }
+            @Override
+            public void setPreStartBlockProtectionEnabled(boolean enabled) {}
             
             @Override
             public boolean isValidBorderSize(double size) {
