@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude generated code -->
+    <Match>
+        <Package name="~.*\.generated\..*"/>
+    </Match>
+    
+    <!-- Exclude test code -->
+    <Match>
+        <Package name="~.*\.test\..*"/>
+    </Match>
+    
+    <!-- Allow non-final static fields in Bukkit plugins (common pattern) -->
+    <Match>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    
+    <!-- Allow unused parameters in event handlers -->
+    <Match>
+        <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
+    </Match>
+</FindBugsFilter>
