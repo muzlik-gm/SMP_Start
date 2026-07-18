@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PvPManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.pvp</a> &gt; <span class="el_source">PvPManagerImpl.java</span></div><h1>PvPManagerImpl.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.pvp;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.World;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
+/**
+ * Implementation of PvPManager that handles PvP protection
+ */
+public class PvPManagerImpl implements PvPManager, Listener {
+    
+    private final SMPStartPlugin plugin;
+<span class="nc" id="L23">    private boolean pvpProtectionActive = false;</span>
+    private long protectionStartTime;
+    private BukkitTask protectionTask;
+    private BossBar pvpBossBar;
+    private BukkitTask bossBarUpdateTask;
+    
+<span class="nc" id="L29">    public PvPManagerImpl(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L30">        this.plugin = plugin;</span>
+        // Register event listener
+<span class="nc" id="L32">        Bukkit.getPluginManager().registerEvents(this, plugin);</span>
+<span class="nc" id="L33">    }</span>
+    
+    @Override
+    public void startPvPProtection() {
+<span class="nc" id="L37">        startPvPProtection(System.currentTimeMillis(), false);</span>
+<span class="nc" id="L38">    }</span>
+    
+    /**
+     * Start PvP protection with a specific start time (for resuming after restart)
+     * @param startTime when the protection originally started
+     */
+    public void startPvPProtection(long startTime) {
+<span class="nc" id="L45">        startPvPProtection(startTime, true);</span>
+<span class="nc" id="L46">    }</span>
+    
+    private void startPvPProtection(long startTime, boolean resumed) {
+<span class="nc" id="L49">        int durationMinutes = plugin.getConfigManager().getPvpProtectionDuration();</span>
+        
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (durationMinutes &lt;= 0) {</span>
+<span class="nc" id="L52">            plugin.getLogger().info(&quot;PvP protection is disabled in config&quot;);</span>
+<span class="nc" id="L53">            return;</span>
+        }
+        
+        // Prevent duplicate boss bars or timers if protection is already active
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (pvpProtectionActive) {</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (protectionTask != null) {</span>
+<span class="nc" id="L59">                protectionTask.cancel();</span>
+<span class="nc" id="L60">                protectionTask = null;</span>
+            }
+<span class="nc" id="L62">            removePvPBossBar();</span>
+        }
+        
+<span class="nc" id="L65">        pvpProtectionActive = true;</span>
+<span class="nc" id="L66">        protectionStartTime = startTime;</span>
+        
+        // Check if protection should still be active
+<span class="nc" id="L69">        long elapsedMs = System.currentTimeMillis() - startTime;</span>
+<span class="nc" id="L70">        long elapsedMinutes = elapsedMs / (60 * 1000);</span>
+        
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (elapsedMinutes &gt;= durationMinutes) {</span>
+            // Protection period has already expired
+<span class="nc" id="L74">            plugin.getLogger().info(&quot;PvP protection period has already expired&quot;);</span>
+<span class="nc" id="L75">            stopPvPProtection();</span>
+<span class="nc" id="L76">            return;</span>
+        }
+        
+<span class="nc" id="L79">        int remainingMinutes = (int) (durationMinutes - elapsedMinutes);</span>
+        
+        // Disable PvP in target worlds
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        for (World world : getTargetWorlds()) {</span>
+<span class="nc" id="L83">            world.setPVP(false);</span>
+<span class="nc" id="L84">        }</span>
+        
+        // Broadcast protection start/resume
+        String message;
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (!resumed) {</span>
+            // New protection
+<span class="nc" id="L90">            message = ChatColor.YELLOW + &quot;[MSS] &quot; + ChatColor.GREEN + &quot;PvP protection active for &quot; +</span>
+                     durationMinutes + &quot; minutes. Players cannot damage each other!&quot;;
+        } else {
+            // Resumed protection
+<span class="nc" id="L94">            message = ChatColor.YELLOW + &quot;[MSS] &quot; + ChatColor.GREEN + &quot;PvP protection resumed — &quot; +</span>
+                     remainingMinutes + &quot; minutes remaining.&quot;;
+        }
+<span class="nc" id="L97">        Bukkit.broadcastMessage(message);</span>
+        
+        // Create and show boss bar
+<span class="nc" id="L100">        createPvPBossBar(durationMinutes);</span>
+        
+        // Schedule protection end based on remaining time
+<span class="nc" id="L103">        long remainingTicks = remainingMinutes * 60 * 20L; // Convert minutes to ticks</span>
+<span class="nc" id="L104">        protectionTask = new BukkitRunnable() {</span>
+            @Override
+            public void run() {
+<span class="nc" id="L107">                stopPvPProtection();</span>
+<span class="nc" id="L108">            }</span>
+<span class="nc" id="L109">        }.runTaskLater(plugin, remainingTicks);</span>
+        
+        // Schedule warning messages based on remaining time
+<span class="nc" id="L112">        scheduleWarningMessages(remainingMinutes);</span>
+        
+<span class="nc" id="L114">        plugin.getLogger().info(&quot;Started PvP protection for &quot; + remainingMinutes + &quot; minutes (total: &quot; + durationMinutes + &quot;)&quot;);</span>
+<span class="nc" id="L115">    }</span>
+    
+    @Override
+    public void stopPvPProtection() {
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (!pvpProtectionActive) {</span>
+<span class="nc" id="L120">            return;</span>
+        }
+        
+<span class="nc" id="L123">        pvpProtectionActive = false;</span>
+        
+        // Cancel protection task if running
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (protectionTask != null) {</span>
+<span class="nc" id="L127">            protectionTask.cancel();</span>
+<span class="nc" id="L128">            protectionTask = null;</span>
+        }
+        
+        // Remove boss bar
+<span class="nc" id="L132">        removePvPBossBar();</span>
+        
+        // Enable PvP in target worlds
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        for (World world : getTargetWorlds()) {</span>
+<span class="nc" id="L136">            world.setPVP(true);</span>
+<span class="nc" id="L137">        }</span>
+        
+        // Broadcast protection end
+<span class="nc" id="L140">        String message = ChatColor.YELLOW + &quot;[MSS] &quot; + ChatColor.RED + &quot;PvP protection has ended! &quot; +</span>
+                        ChatColor.YELLOW + &quot;Watch your back!&quot;;
+<span class="nc" id="L142">        Bukkit.broadcastMessage(message);</span>
+        
+<span class="nc" id="L144">        plugin.getLogger().info(&quot;PvP protection ended - PvP is now enabled&quot;);</span>
+<span class="nc" id="L145">    }</span>
+    
+    @Override
+    public boolean isPvPProtectionActive() {
+<span class="nc" id="L149">        return pvpProtectionActive;</span>
+    }
+    
+    @Override
+    public int getRemainingProtectionTime() {
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if (!pvpProtectionActive) {</span>
+<span class="nc" id="L155">            return 0;</span>
+        }
+        
+<span class="nc" id="L158">        int durationMinutes = plugin.getConfigManager().getPvpProtectionDuration();</span>
+<span class="nc" id="L159">        long elapsedMs = System.currentTimeMillis() - protectionStartTime;</span>
+<span class="nc" id="L160">        long elapsedMinutes = elapsedMs / (60 * 1000);</span>
+        
+<span class="nc" id="L162">        return Math.max(0, durationMinutes - (int) elapsedMinutes);</span>
+    }
+    
+    /**
+     * Schedule warning messages before PvP protection ends
+     * @param durationMinutes total protection duration
+     */
+    private void scheduleWarningMessages(int durationMinutes) {
+        // Warning at 5 minutes remaining
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (durationMinutes &gt; 5) {</span>
+<span class="nc" id="L172">            long delay = (durationMinutes - 5) * 60 * 20L;</span>
+<span class="nc" id="L173">            Bukkit.getScheduler().runTaskLater(plugin, () -&gt; {</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                if (pvpProtectionActive) {</span>
+<span class="nc" id="L175">                    String msg = ChatColor.YELLOW + &quot;[MSS] &quot; + ChatColor.GOLD +</span>
+                                &quot;PvP protection ends in 5 minutes!&quot;;
+<span class="nc" id="L177">                    Bukkit.broadcastMessage(msg);</span>
+                }
+<span class="nc" id="L179">            }, delay);</span>
+        }
+        
+        // Warning at 1 minute remaining
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (durationMinutes &gt; 1) {</span>
+<span class="nc" id="L184">            long delay = (durationMinutes - 1) * 60 * 20L;</span>
+<span class="nc" id="L185">            Bukkit.getScheduler().runTaskLater(plugin, () -&gt; {</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                if (pvpProtectionActive) {</span>
+<span class="nc" id="L187">                    String msg = ChatColor.YELLOW + &quot;[MSS] &quot; + ChatColor.GOLD +</span>
+                                &quot;PvP protection ends in 1 minute!&quot;;
+<span class="nc" id="L189">                    Bukkit.broadcastMessage(msg);</span>
+                }
+<span class="nc" id="L191">            }, delay);</span>
+        }
+        
+        // Warning at 30 seconds remaining
+<span class="nc" id="L195">        long delay30s = (durationMinutes * 60 - 30) * 20L;</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">        if (delay30s &gt; 0) {</span>
+<span class="nc" id="L197">            Bukkit.getScheduler().runTaskLater(plugin, () -&gt; {</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                if (pvpProtectionActive) {</span>
+<span class="nc" id="L199">                    String msg = ChatColor.YELLOW + &quot;[MSS] &quot; + ChatColor.RED +</span>
+                                &quot;PvP protection ends in 30 seconds!&quot;;
+<span class="nc" id="L201">                    Bukkit.broadcastMessage(msg);</span>
+                }
+<span class="nc" id="L203">            }, delay30s);</span>
+        }
+<span class="nc" id="L205">    }</span>
+    
+    /**
+     * Event handler to prevent PvP during protection
+     */
+    @EventHandler
+    public void onPlayerDamage(EntityDamageByEntityEvent event) {
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (!pvpProtectionActive) {</span>
+<span class="nc" id="L213">            return;</span>
+        }
+        
+        // Check if this is player vs player damage
+<span class="nc bnc" id="L217" title="All 4 branches missed.">        if (event.getEntity() instanceof Player &amp;&amp; event.getDamager() instanceof Player) {</span>
+<span class="nc" id="L218">            Player victim = (Player) event.getEntity();</span>
+<span class="nc" id="L219">            Player attacker = (Player) event.getDamager();</span>
+            
+            // Cancel the damage
+<span class="nc" id="L222">            event.setCancelled(true);</span>
+            
+            // Notify the attacker
+<span class="nc" id="L225">            int remaining = getRemainingProtectionTime();</span>
+<span class="nc" id="L226">            String message = ChatColor.RED + &quot;PvP is disabled for &quot; +</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                           remaining + &quot; more minute&quot; + (remaining != 1 ? &quot;s&quot; : &quot;&quot;) + &quot;.&quot;;</span>
+<span class="nc" id="L228">            attacker.sendMessage(message);</span>
+        }
+<span class="nc" id="L230">    }</span>
+    
+    /**
+     * Create and display the PvP protection boss bar
+     * @param durationMinutes total protection duration in minutes
+     */
+    private void createPvPBossBar(int durationMinutes) {
+        // Create boss bar
+<span class="nc" id="L238">        pvpBossBar = Bukkit.createBossBar(</span>
+            ChatColor.GREEN + &quot;PvP Protection: &quot; + durationMinutes + &quot; min remaining&quot;,
+            BarColor.GREEN,
+            BarStyle.SOLID
+        );
+        
+        // Add all online players to boss bar
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L246">            pvpBossBar.addPlayer(player);</span>
+<span class="nc" id="L247">        }</span>
+        
+        // Set initial progress to full
+<span class="nc" id="L250">        pvpBossBar.setProgress(1.0);</span>
+<span class="nc" id="L251">        pvpBossBar.setVisible(true);</span>
+        
+        // Start boss bar update task (update every second)
+<span class="nc" id="L254">        bossBarUpdateTask = new BukkitRunnable() {</span>
+            @Override
+            public void run() {
+<span class="nc" id="L257">                updatePvPBossBar();</span>
+<span class="nc" id="L258">            }</span>
+<span class="nc" id="L259">        }.runTaskTimer(plugin, 20L, 20L); // Start after 1 second, repeat every second</span>
+        
+<span class="nc" id="L261">        plugin.getLogger().info(&quot;PvP protection boss bar created and displayed&quot;);</span>
+<span class="nc" id="L262">    }</span>
+    
+    /**
+     * Update the boss bar with current protection status
+     */
+    private void updatePvPBossBar() {
+<span class="nc bnc" id="L268" title="All 4 branches missed.">        if (pvpBossBar == null || !pvpProtectionActive) {</span>
+<span class="nc" id="L269">            return;</span>
+        }
+        
+<span class="nc" id="L272">        int totalMinutes = plugin.getConfigManager().getPvpProtectionDuration();</span>
+<span class="nc" id="L273">        long elapsedMs = System.currentTimeMillis() - protectionStartTime;</span>
+<span class="nc" id="L274">        long totalMs = totalMinutes * 60 * 1000L;</span>
+<span class="nc" id="L275">        long remainingMs = totalMs - elapsedMs;</span>
+        
+<span class="nc bnc" id="L277" title="All 2 branches missed.">        if (remainingMs &lt;= 0) {</span>
+            // Protection should end
+<span class="nc" id="L279">            stopPvPProtection();</span>
+<span class="nc" id="L280">            return;</span>
+        }
+        
+        // Calculate precise progress
+<span class="nc" id="L284">        double progress = (double) remainingMs / totalMs;</span>
+<span class="nc" id="L285">        pvpBossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));</span>
+        
+        // Calculate remaining time
+<span class="nc" id="L288">        long remainingSeconds = remainingMs / 1000;</span>
+<span class="nc" id="L289">        long remainingMinutes = remainingSeconds / 60;</span>
+<span class="nc" id="L290">        long remainingSecondsOnly = remainingSeconds % 60;</span>
+        
+        // Update title with remaining time
+        String title;
+        BarColor color;
+        
+<span class="nc bnc" id="L296" title="All 2 branches missed.">        if (remainingMinutes &gt; 5) {</span>
+<span class="nc" id="L297">            color = BarColor.GREEN;</span>
+<span class="nc" id="L298">            title = ChatColor.GREEN + &quot;PvP Protection: &quot; + remainingMinutes + &quot; minutes remaining&quot;;</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        } else if (remainingMinutes &gt; 1) {</span>
+<span class="nc" id="L300">            color = BarColor.YELLOW;</span>
+<span class="nc" id="L301">            title = ChatColor.YELLOW + &quot;PvP Protection: &quot; + remainingMinutes + &quot; minutes remaining&quot;;</span>
+<span class="nc bnc" id="L302" title="All 2 branches missed.">        } else if (remainingMinutes == 1) {</span>
+<span class="nc" id="L303">            color = BarColor.YELLOW;</span>
+<span class="nc" id="L304">            title = ChatColor.YELLOW + &quot;PvP Protection: 1 minute &quot; + remainingSecondsOnly + &quot; seconds remaining&quot;;</span>
+        } else {
+            // Less than 1 minute - show seconds only
+<span class="nc" id="L307">            color = BarColor.RED;</span>
+<span class="nc" id="L308">            title = ChatColor.RED + &quot;PvP Protection: &quot; + remainingSeconds + &quot; seconds remaining&quot;;</span>
+        }
+        
+<span class="nc" id="L311">        pvpBossBar.setColor(color);</span>
+<span class="nc" id="L312">        pvpBossBar.setTitle(title);</span>
+        
+        // Add any new players who joined
+<span class="nc bnc" id="L315" title="All 2 branches missed.">        for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">            if (!pvpBossBar.getPlayers().contains(player)) {</span>
+<span class="nc" id="L317">                pvpBossBar.addPlayer(player);</span>
+            }
+<span class="nc" id="L319">        }</span>
+<span class="nc" id="L320">    }</span>
+    
+    /**
+     * Remove the PvP protection boss bar
+     */
+    private void removePvPBossBar() {
+        // Cancel update task
+<span class="nc bnc" id="L327" title="All 2 branches missed.">        if (bossBarUpdateTask != null) {</span>
+<span class="nc" id="L328">            bossBarUpdateTask.cancel();</span>
+<span class="nc" id="L329">            bossBarUpdateTask = null;</span>
+        }
+        
+        // Remove and hide boss bar
+<span class="nc bnc" id="L333" title="All 2 branches missed.">        if (pvpBossBar != null) {</span>
+<span class="nc" id="L334">            pvpBossBar.removeAll();</span>
+<span class="nc" id="L335">            pvpBossBar.setVisible(false);</span>
+<span class="nc" id="L336">            pvpBossBar = null;</span>
+<span class="nc" id="L337">            plugin.getLogger().info(&quot;PvP protection boss bar removed&quot;);</span>
+        }
+<span class="nc" id="L339">    }</span>
+    
+    private Iterable&lt;World&gt; getTargetWorlds() {
+<span class="nc" id="L342">        String configuredWorld = plugin.getConfigManager().getWorldName();</span>
+<span class="nc bnc" id="L343" title="All 4 branches missed.">        if (configuredWorld != null &amp;&amp; !configuredWorld.trim().isEmpty()) {</span>
+<span class="nc" id="L344">            World world = Bukkit.getWorld(configuredWorld.trim());</span>
+<span class="nc bnc" id="L345" title="All 2 branches missed.">            if (world != null) {</span>
+<span class="nc" id="L346">                return java.util.Collections.singletonList(world);</span>
+            }
+<span class="nc" id="L348">            plugin.getLogger().warning(&quot;Configured world not found: &quot; + configuredWorld + &quot;. Applying PvP to all worlds.&quot;);</span>
+        }
+<span class="nc" id="L350">        return Bukkit.getWorlds();</span>
+    }
+    
+    /**
+     * Cleanup method
+     */
+    public void cleanup() {
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (protectionTask != null) {</span>
+<span class="nc" id="L358">            protectionTask.cancel();</span>
+<span class="nc" id="L359">            protectionTask = null;</span>
+        }
+<span class="nc" id="L361">        removePvPBossBar();</span>
+<span class="nc" id="L362">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigMenuManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.menu</a> &gt; <span class="el_source">ConfigMenuManager.java</span></div><h1>ConfigMenuManager.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.menu;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import com.muzlik.smpstart.state.StateManager.PluginState;
+import com.muzlik.smpstart.state.StateManagerImpl;
+import com.muzlik.smpstart.utils.MessageUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.*;
+
+/**
+ * Modern GUI for SMP Starter.
+ * Design: Integrated HEX colors, sound effects, and cleaner layouts.
+ */
+public class ConfigMenuManager implements Listener {
+
+    private final SMPStartPlugin plugin;
+
+<span class="nc" id="L30">    private static final String TITLE_MAIN      = MessageUtils.color(&quot;&amp;#00FBFF&amp;lSMP STARTER&quot;);</span>
+<span class="nc" id="L31">    private static final String TITLE_COUNTDOWN = MessageUtils.color(&quot;&amp;#00FBFF&amp;lCOUNTDOWN SETTINGS&quot;);</span>
+<span class="nc" id="L32">    private static final String TITLE_BORDER    = MessageUtils.color(&quot;&amp;#00FBFF&amp;lBORDER SETTINGS&quot;);</span>
+<span class="nc" id="L33">    private static final String TITLE_PVP       = MessageUtils.color(&quot;&amp;#00FBFF&amp;lPVP SETTINGS&quot;);</span>
+<span class="nc" id="L34">    private static final String TITLE_REMINDERS = MessageUtils.color(&quot;&amp;#00FBFF&amp;lREMINDER SETTINGS&quot;);</span>
+<span class="nc" id="L35">    private static final String TITLE_PHASES    = MessageUtils.color(&quot;&amp;#00FBFF&amp;lPHASE SETTINGS&quot;);</span>
+
+<span class="nc" id="L37">    private final Map&lt;UUID, PlayerMenuState&gt; menuStates = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L38">    private final Map&lt;UUID, String&gt; openMenus = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L39">    private final Map&lt;UUID, Double&gt; pendingBorderX = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L41">    public ConfigMenuManager(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L42">        this.plugin = plugin;</span>
+<span class="nc" id="L43">    }</span>
+
+    // =========================================================================
+    //  OPENERS
+    // =========================================================================
+
+    public void openMainMenu(Player player) {
+<span class="nc" id="L50">        Inventory inv = Bukkit.createInventory(null, 45, TITLE_MAIN);</span>
+<span class="nc" id="L51">        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);</span>
+
+<span class="nc" id="L53">        boolean smpStarted = isSmpStarted();</span>
+<span class="nc" id="L54">        PluginState state = plugin.getStateManager().getCurrentState();</span>
+
+        // Status Item
+<span class="nc" id="L57">        ItemStack status = pane(Material.BEACON, MessageUtils.color(&quot;&amp;#00FBFF&amp;lCURRENT STATUS&quot;),</span>
+<span class="nc" id="L58">                MessageUtils.color(&quot;&amp;8&amp;m━━━━━━━━━━━━━━━━━━━━&quot;),</span>
+<span class="nc" id="L59">                MessageUtils.color(&quot;&amp;7Status: &amp;f&quot; + state.name()),</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                MessageUtils.color(&quot;&amp;7SMP Started: &quot; + (smpStarted ? &quot;&amp;aYes&quot; : &quot;&amp;cNo&quot;)),</span>
+<span class="nc" id="L61">                MessageUtils.color(&quot;&amp;8&amp;m━━━━━━━━━━━━━━━━━━━━&quot;));</span>
+<span class="nc" id="L62">        inv.setItem(4, status);</span>
+
+        // Control Buttons
+<span class="nc" id="L65">        inv.setItem(11, pane(Material.CLOCK, MessageUtils.color(&quot;&amp;#00FBFF&amp;lCOUNTDOWN&quot;), MessageUtils.color(&quot;&amp;7Duration, Cooldown, Boss Bar&quot;)));</span>
+<span class="nc" id="L66">        inv.setItem(13, pane(Material.BARRIER, MessageUtils.color(&quot;&amp;#00FBFF&amp;lWORLD BORDER&quot;), MessageUtils.color(&quot;&amp;7Sizes, Transition, Center&quot;)));</span>
+<span class="nc" id="L67">        inv.setItem(15, pane(Material.DIAMOND_SWORD, MessageUtils.color(&quot;&amp;#00FBFF&amp;lPVP &amp; SAFETY&quot;), MessageUtils.color(&quot;&amp;7PvP Protection, Blocks&quot;)));</span>
+<span class="nc" id="L68">        inv.setItem(29, pane(Material.BELL, MessageUtils.color(&quot;&amp;#00FBFF&amp;lREMINDERS&quot;), MessageUtils.color(&quot;&amp;7Join alerts for Admins&quot;)));</span>
+<span class="nc" id="L69">        inv.setItem(31, pane(Material.GRASS_BLOCK, MessageUtils.color(&quot;&amp;#00FBFF&amp;lPHASES&quot;), MessageUtils.color(&quot;&amp;7Difficulty, Mobs, Players&quot;)));</span>
+
+        // Action Buttons
+<span class="nc bnc" id="L72" title="All 4 branches missed.">        if (state == PluginState.IDLE &amp;&amp; !smpStarted) {</span>
+<span class="nc" id="L73">            inv.setItem(22, pane(Material.LIME_CONCRETE, MessageUtils.color(&quot;&amp;a&amp;lSTART SMP&quot;), MessageUtils.color(&quot;&amp;7Begins the launch sequence&quot;)));</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        } else if (state == PluginState.COUNTDOWN) {</span>
+<span class="nc" id="L75">            inv.setItem(22, pane(Material.RED_CONCRETE, MessageUtils.color(&quot;&amp;c&amp;lCANCEL START&quot;), MessageUtils.color(&quot;&amp;7Stops the countdown&quot;)));</span>
+        } else {
+<span class="nc" id="L77">            inv.setItem(22, pane(Material.TNT, MessageUtils.color(&quot;&amp;c&amp;lRESET SMP&quot;), MessageUtils.color(&quot;&amp;7Returns everything to pre-start&quot;)));</span>
+        }
+
+<span class="nc" id="L80">        player.openInventory(inv);</span>
+<span class="nc" id="L81">        openMenus.put(player.getUniqueId(), TITLE_MAIN);</span>
+<span class="nc" id="L82">    }</span>
+
+    public void openCountdownMenu(Player player) {
+<span class="nc" id="L85">        Inventory inv = Bukkit.createInventory(null, 45, TITLE_COUNTDOWN);</span>
+<span class="nc" id="L86">        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);</span>
+
+<span class="nc" id="L88">        int dur = plugin.getConfigManager().getCountdownDuration();</span>
+<span class="nc" id="L89">        int cool = plugin.getConfigManager().getCooldownDuration();</span>
+<span class="nc" id="L90">        boolean bb = plugin.getConfigManager().isCountdownBossBarEnabled();</span>
+
+<span class="nc" id="L92">        inv.setItem(20, pane(Material.CLOCK, MessageUtils.color(&quot;&amp;#00FBFF&amp;lDURATION&quot;), MessageUtils.color(&quot;&amp;7Current: &amp;f&quot; + dur + &quot;s&quot;), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to change&quot;)));</span>
+<span class="nc" id="L93">        inv.setItem(22, pane(Material.RECOVERY_COMPASS, MessageUtils.color(&quot;&amp;#00FBFF&amp;lCOOLDOWN&quot;), MessageUtils.color(&quot;&amp;7Current: &amp;f&quot; + cool + &quot;s&quot;), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to change&quot;)));</span>
+<span class="nc bnc" id="L94" title="All 4 branches missed.">        inv.setItem(24, pane(bb ? Material.LIME_DYE : Material.GRAY_DYE, MessageUtils.color(&quot;&amp;#00FBFF&amp;lBOSS BAR&quot;), MessageUtils.color(&quot;&amp;7Status: &quot; + (bb ? &quot;&amp;aEnabled&quot; : &quot;&amp;cDisabled&quot;)), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to toggle&quot;)));</span>
+
+<span class="nc" id="L96">        inv.setItem(40, pane(Material.ARROW, MessageUtils.color(&quot;&amp;c&amp;lBACK&quot;)));</span>
+<span class="nc" id="L97">        player.openInventory(inv);</span>
+<span class="nc" id="L98">        openMenus.put(player.getUniqueId(), TITLE_COUNTDOWN);</span>
+<span class="nc" id="L99">    }</span>
+
+    public void openBorderMenu(Player player) {
+<span class="nc" id="L102">        Inventory inv = Bukkit.createInventory(null, 45, TITLE_BORDER);</span>
+<span class="nc" id="L103">        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);</span>
+
+<span class="nc" id="L105">        double pre = plugin.getConfigManager().getPreStartBorderSize();</span>
+<span class="nc" id="L106">        double fin = plugin.getConfigManager().getFinalBorderSize();</span>
+<span class="nc" id="L107">        int trans = plugin.getConfigManager().getBorderTransitionSeconds();</span>
+<span class="nc" id="L108">        String mode = plugin.getConfigManager().getBorderCenterMode();</span>
+<span class="nc" id="L109">        double cx = plugin.getConfigManager().getBorderCenterX();</span>
+<span class="nc" id="L110">        double cz = plugin.getConfigManager().getBorderCenterZ();</span>
+
+<span class="nc" id="L112">        inv.setItem(11, pane(Material.IRON_BARS, MessageUtils.color(&quot;&amp;#00FBFF&amp;lPRE-START SIZE&quot;), MessageUtils.color(&quot;&amp;7Current: &amp;f&quot; + fmt(pre) + &quot; blocks&quot;), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to change&quot;)));</span>
+<span class="nc" id="L113">        inv.setItem(13, pane(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE, MessageUtils.color(&quot;&amp;#00FBFF&amp;lFINAL SIZE&quot;), MessageUtils.color(&quot;&amp;7Current: &amp;f&quot; + fmt(fin) + &quot; blocks&quot;), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to change&quot;)));</span>
+<span class="nc" id="L114">        inv.setItem(15, pane(Material.REPEATER, MessageUtils.color(&quot;&amp;#00FBFF&amp;lTRANSITION&quot;), MessageUtils.color(&quot;&amp;7Current: &amp;f&quot; + trans + &quot;s&quot;), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to change&quot;)));</span>
+
+<span class="nc" id="L116">        inv.setItem(29, pane(Material.COMPASS, MessageUtils.color(&quot;&amp;#00FBFF&amp;lCENTER MODE&quot;), MessageUtils.color(&quot;&amp;7Current: &amp;f&quot; + mode), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to cycle&quot;)));</span>
+<span class="nc" id="L117">        inv.setItem(31, pane(Material.MAP, MessageUtils.color(&quot;&amp;#00FBFF&amp;lFIXED POSITION&quot;), MessageUtils.color(&quot;&amp;7X: &amp;f&quot; + fmt(cx) + &quot; &amp;7Z: &amp;f&quot; + fmt(cz)), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to set&quot;)));</span>
+
+<span class="nc" id="L119">        inv.setItem(40, pane(Material.ARROW, MessageUtils.color(&quot;&amp;c&amp;lBACK&quot;)));</span>
+<span class="nc" id="L120">        player.openInventory(inv);</span>
+<span class="nc" id="L121">        openMenus.put(player.getUniqueId(), TITLE_BORDER);</span>
+<span class="nc" id="L122">    }</span>
+
+    public void openPvpMenu(Player player) {
+<span class="nc" id="L125">        Inventory inv = Bukkit.createInventory(null, 45, TITLE_PVP);</span>
+<span class="nc" id="L126">        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);</span>
+
+<span class="nc" id="L128">        int pvp = plugin.getConfigManager().getPvpProtectionDuration();</span>
+<span class="nc" id="L129">        boolean blocks = plugin.getConfigManager().isPreStartBlockProtectionEnabled();</span>
+
+<span class="nc" id="L131">        inv.setItem(21, pane(Material.SHIELD, MessageUtils.color(&quot;&amp;#00FBFF&amp;lPVP PROTECTION&quot;), MessageUtils.color(&quot;&amp;7Duration: &amp;f&quot; + pvp + &quot; min&quot;), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to change&quot;)));</span>
+<span class="nc bnc" id="L132" title="All 4 branches missed.">        inv.setItem(23, pane(blocks ? Material.IRON_BLOCK : Material.COBBLESTONE, MessageUtils.color(&quot;&amp;#00FBFF&amp;lBLOCK PROTECTION&quot;), MessageUtils.color(&quot;&amp;7Status: &quot; + (blocks ? &quot;&amp;aEnabled&quot; : &quot;&amp;cDisabled&quot;)), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to toggle&quot;)));</span>
+
+<span class="nc" id="L134">        inv.setItem(40, pane(Material.ARROW, MessageUtils.color(&quot;&amp;c&amp;lBACK&quot;)));</span>
+<span class="nc" id="L135">        player.openInventory(inv);</span>
+<span class="nc" id="L136">        openMenus.put(player.getUniqueId(), TITLE_PVP);</span>
+<span class="nc" id="L137">    }</span>
+
+    public void openRemindersMenu(Player player) {
+<span class="nc" id="L140">        Inventory inv = Bukkit.createInventory(null, 45, TITLE_REMINDERS);</span>
+<span class="nc" id="L141">        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);</span>
+
+<span class="nc" id="L143">        boolean en = plugin.getConfigManager().areJoinRemindersEnabled();</span>
+<span class="nc" id="L144">        int iv = plugin.getConfigManager().getReminderInterval();</span>
+
+<span class="nc bnc" id="L146" title="All 4 branches missed.">        inv.setItem(21, pane(en ? Material.LIME_DYE : Material.GRAY_DYE, MessageUtils.color(&quot;&amp;#00FBFF&amp;lENABLED&quot;), MessageUtils.color(&quot;&amp;7Status: &quot; + (en ? &quot;&amp;aYes&quot; : &quot;&amp;cNo&quot;)), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to toggle&quot;)));</span>
+<span class="nc" id="L147">        inv.setItem(23, pane(Material.CLOCK, MessageUtils.color(&quot;&amp;#00FBFF&amp;lINTERVAL&quot;), MessageUtils.color(&quot;&amp;7Every: &amp;f&quot; + iv + &quot;s&quot;), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to change&quot;)));</span>
+
+<span class="nc" id="L149">        inv.setItem(40, pane(Material.ARROW, MessageUtils.color(&quot;&amp;c&amp;lBACK&quot;)));</span>
+<span class="nc" id="L150">        player.openInventory(inv);</span>
+<span class="nc" id="L151">        openMenus.put(player.getUniqueId(), TITLE_REMINDERS);</span>
+<span class="nc" id="L152">    }</span>
+
+    public void openPhasesMenu(Player player) {
+<span class="nc" id="L155">        Inventory inv = Bukkit.createInventory(null, 45, TITLE_PHASES);</span>
+<span class="nc" id="L156">        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,37,38,39,40,41,42,43,44);</span>
+
+<span class="nc" id="L158">        String d1 = plugin.getConfigManager().getStartingDifficulty();</span>
+<span class="nc" id="L159">        String d2 = plugin.getConfigManager().getStartedDifficulty();</span>
+<span class="nc" id="L160">        boolean m1 = plugin.getConfigManager().isStartingDisableMobSpawning();</span>
+<span class="nc" id="L161">        boolean m2 = plugin.getConfigManager().isStartedDisableMobSpawning();</span>
+<span class="nc" id="L162">        boolean md1 = plugin.getConfigManager().isStartingDisableMobDamage();</span>
+<span class="nc" id="L163">        boolean md2 = plugin.getConfigManager().isStartedDisableMobDamage();</span>
+<span class="nc" id="L164">        int min = plugin.getConfigManager().getMinOnlinePlayers();</span>
+
+<span class="nc" id="L166">        inv.setItem(10, pane(Material.SUNFLOWER, MessageUtils.color(&quot;&amp;#00FBFF&amp;lPRE-START DIFF&quot;), MessageUtils.color(&quot;&amp;7Current: &amp;f&quot; + d1), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to cycle&quot;)));</span>
+<span class="nc bnc" id="L167" title="All 4 branches missed.">        inv.setItem(11, pane(m1 ? Material.SPAWNER : Material.ZOMBIE_HEAD, MessageUtils.color(&quot;&amp;#00FBFF&amp;lPRE-START MOBS&quot;), MessageUtils.color(&quot;&amp;7Spawn: &quot; + (!m1 ? &quot;&amp;aOn&quot; : &quot;&amp;cOff&quot;)), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to toggle&quot;)));</span>
+<span class="nc bnc" id="L168" title="All 4 branches missed.">        inv.setItem(12, pane(md1 ? Material.CHAINMAIL_CHESTPLATE : Material.IRON_SWORD, MessageUtils.color(&quot;&amp;#00FBFF&amp;lPRE-START DAMAGE&quot;), MessageUtils.color(&quot;&amp;7Mob Dmg: &quot; + (!md1 ? &quot;&amp;aOn&quot; : &quot;&amp;cOff&quot;)), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to toggle&quot;)));</span>
+
+<span class="nc" id="L170">        inv.setItem(14, pane(Material.DIAMOND_SWORD, MessageUtils.color(&quot;&amp;#00FBFF&amp;lSTARTED DIFF&quot;), MessageUtils.color(&quot;&amp;7Current: &amp;f&quot; + d2), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to cycle&quot;)));</span>
+<span class="nc bnc" id="L171" title="All 4 branches missed.">        inv.setItem(15, pane(m2 ? Material.SPAWNER : Material.ZOMBIE_HEAD, MessageUtils.color(&quot;&amp;#00FBFF&amp;lSTARTED MOBS&quot;), MessageUtils.color(&quot;&amp;7Spawn: &quot; + (!m2 ? &quot;&amp;aOn&quot; : &quot;&amp;cOff&quot;)), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to toggle&quot;)));</span>
+<span class="nc bnc" id="L172" title="All 4 branches missed.">        inv.setItem(16, pane(md2 ? Material.CHAINMAIL_CHESTPLATE : Material.IRON_SWORD, MessageUtils.color(&quot;&amp;#00FBFF&amp;lSTARTED DAMAGE&quot;), MessageUtils.color(&quot;&amp;7Mob Dmg: &quot; + (!md2 ? &quot;&amp;aOn&quot; : &quot;&amp;cOff&quot;)), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to toggle&quot;)));</span>
+
+<span class="nc" id="L174">        inv.setItem(31, pane(Material.PLAYER_HEAD, MessageUtils.color(&quot;&amp;#00FBFF&amp;lMIN PLAYERS&quot;), MessageUtils.color(&quot;&amp;7Required: &amp;f&quot; + min), &quot;&quot;, MessageUtils.color(&quot;&amp;eClick to change&quot;)));</span>
+
+<span class="nc" id="L176">        inv.setItem(40, pane(Material.ARROW, MessageUtils.color(&quot;&amp;c&amp;lBACK&quot;)));</span>
+<span class="nc" id="L177">        player.openInventory(inv);</span>
+<span class="nc" id="L178">        openMenus.put(player.getUniqueId(), TITLE_PHASES);</span>
+<span class="nc" id="L179">    }</span>
+
+    // =========================================================================
+    //  EVENTS
+    // =========================================================================
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+<span class="nc" id="L187">        openMenus.remove(event.getPlayer().getUniqueId());</span>
+<span class="nc" id="L188">    }</span>
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (!(event.getWhoClicked() instanceof Player player)) return;</span>
+<span class="nc" id="L193">        String title = event.getView().getTitle();</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (!isOurMenu(title)) return;</span>
+
+<span class="nc" id="L196">        event.setCancelled(true);</span>
+<span class="nc" id="L197">        ItemStack item = event.getCurrentItem();</span>
+<span class="nc bnc" id="L198" title="All 4 branches missed.">        if (item == null || item.getType().isAir()) return;</span>
+
+<span class="nc" id="L200">        int slot = event.getRawSlot();</span>
+<span class="nc" id="L201">        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);</span>
+
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        if (title.equals(TITLE_MAIN)) handleMainClick(player, slot);</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        else if (title.equals(TITLE_COUNTDOWN)) handleCountdownClick(player, slot);</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        else if (title.equals(TITLE_BORDER)) handleBorderClick(player, slot);</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        else if (title.equals(TITLE_PVP)) handlePvpClick(player, slot);</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        else if (title.equals(TITLE_REMINDERS)) handleRemindersClick(player, slot);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        else if (title.equals(TITLE_PHASES)) handlePhasesClick(player, slot);</span>
+<span class="nc" id="L209">    }</span>
+
+    private void handleMainClick(Player player, int slot) {
+<span class="nc bnc" id="L212" title="All 7 branches missed.">        switch (slot) {</span>
+<span class="nc" id="L213">            case 11 -&gt; openCountdownMenu(player);</span>
+<span class="nc" id="L214">            case 13 -&gt; openBorderMenu(player);</span>
+<span class="nc" id="L215">            case 15 -&gt; openPvpMenu(player);</span>
+<span class="nc" id="L216">            case 29 -&gt; openRemindersMenu(player);</span>
+<span class="nc" id="L217">            case 31 -&gt; openPhasesMenu(player);</span>
+            case 22 -&gt; {
+<span class="nc" id="L219">                player.closeInventory();</span>
+<span class="nc" id="L220">                PluginState state = plugin.getStateManager().getCurrentState();</span>
+<span class="nc" id="L221">                boolean smpStarted = isSmpStarted();</span>
+<span class="nc bnc" id="L222" title="All 4 branches missed.">                if (state == PluginState.IDLE &amp;&amp; !smpStarted) player.performCommand(&quot;smp start&quot;);</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">                else if (state == PluginState.COUNTDOWN) player.performCommand(&quot;smp cancel&quot;);</span>
+<span class="nc" id="L224">                else player.performCommand(&quot;smp reset&quot;);</span>
+            }
+        }
+<span class="nc" id="L227">    }</span>
+
+    private void handleCountdownClick(Player player, int slot) {
+<span class="nc bnc" id="L230" title="All 5 branches missed.">        switch (slot) {</span>
+<span class="nc" id="L231">            case 20 -&gt; prompt(player, PlayerMenuState.InputMode.COUNTDOWN_DURATION, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter countdown duration in seconds:&quot;));</span>
+<span class="nc" id="L232">            case 22 -&gt; prompt(player, PlayerMenuState.InputMode.COOLDOWN_DURATION, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter cooldown duration in seconds:&quot;));</span>
+            case 24 -&gt; {
+<span class="nc" id="L234">                boolean cur = plugin.getConfigManager().isCountdownBossBarEnabled();</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">                plugin.getConfigManager().setCountdownBossBarEnabled(!cur);</span>
+<span class="nc" id="L236">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L237">                openCountdownMenu(player);</span>
+<span class="nc" id="L238">            }</span>
+<span class="nc" id="L239">            case 40 -&gt; openMainMenu(player);</span>
+        }
+<span class="nc" id="L241">    }</span>
+
+    private void handleBorderClick(Player player, int slot) {
+<span class="nc bnc" id="L244" title="All 7 branches missed.">        switch (slot) {</span>
+<span class="nc" id="L245">            case 11 -&gt; prompt(player, PlayerMenuState.InputMode.PRE_BORDER_SIZE, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter pre-start border size (blocks):&quot;));</span>
+<span class="nc" id="L246">            case 13 -&gt; prompt(player, PlayerMenuState.InputMode.FINAL_BORDER_SIZE, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter final border size (blocks):&quot;));</span>
+<span class="nc" id="L247">            case 15 -&gt; prompt(player, PlayerMenuState.InputMode.BORDER_TRANSITION, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter expansion time in seconds:&quot;));</span>
+            case 29 -&gt; {
+<span class="nc" id="L249">                String cur = plugin.getConfigManager().getBorderCenterMode();</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                plugin.getConfigManager().setBorderCenterMode(cur.equals(&quot;spawn&quot;) ? &quot;fixed&quot; : &quot;spawn&quot;);</span>
+<span class="nc" id="L251">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L252">                openBorderMenu(player);</span>
+<span class="nc" id="L253">            }</span>
+<span class="nc" id="L254">            case 31 -&gt; prompt(player, PlayerMenuState.InputMode.BORDER_CENTER_X, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter center X coordinate:&quot;));</span>
+<span class="nc" id="L255">            case 40 -&gt; openMainMenu(player);</span>
+        }
+<span class="nc" id="L257">    }</span>
+
+    private void handlePvpClick(Player player, int slot) {
+<span class="nc bnc" id="L260" title="All 4 branches missed.">        switch (slot) {</span>
+<span class="nc" id="L261">            case 21 -&gt; prompt(player, PlayerMenuState.InputMode.PVP_DURATION, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter PvP protection duration (minutes):&quot;));</span>
+            case 23 -&gt; {
+<span class="nc" id="L263">                boolean cur = plugin.getConfigManager().isPreStartBlockProtectionEnabled();</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                plugin.getConfigManager().setPreStartBlockProtectionEnabled(!cur);</span>
+<span class="nc" id="L265">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L266">                openPvpMenu(player);</span>
+<span class="nc" id="L267">            }</span>
+<span class="nc" id="L268">            case 40 -&gt; openMainMenu(player);</span>
+        }
+<span class="nc" id="L270">    }</span>
+
+    private void handleRemindersClick(Player player, int slot) {
+<span class="nc bnc" id="L273" title="All 4 branches missed.">        switch (slot) {</span>
+            case 21 -&gt; {
+<span class="nc" id="L275">                boolean cur = plugin.getConfigManager().areJoinRemindersEnabled();</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                plugin.getConfigManager().setJoinRemindersEnabled(!cur);</span>
+<span class="nc" id="L277">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L278">                openRemindersMenu(player);</span>
+<span class="nc" id="L279">            }</span>
+<span class="nc" id="L280">            case 23 -&gt; prompt(player, PlayerMenuState.InputMode.REMINDER_INTERVAL, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter reminder interval in seconds:&quot;));</span>
+<span class="nc" id="L281">            case 40 -&gt; openMainMenu(player);</span>
+        }
+<span class="nc" id="L283">    }</span>
+
+    private void handlePhasesClick(Player player, int slot) {
+<span class="nc bnc" id="L286" title="All 9 branches missed.">        switch (slot) {</span>
+            case 10 -&gt; {
+<span class="nc" id="L288">                String cur = plugin.getConfigManager().getStartingDifficulty();</span>
+<span class="nc" id="L289">                plugin.getConfigManager().setPhaseDifficulties(cycleDiff(cur), plugin.getConfigManager().getStartedDifficulty());</span>
+<span class="nc" id="L290">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L291">                openPhasesMenu(player);</span>
+<span class="nc" id="L292">            }</span>
+            case 11 -&gt; {
+<span class="nc" id="L294">                boolean cur = plugin.getConfigManager().isStartingDisableMobSpawning();</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">                plugin.getConfigManager().setPhaseMobProtection(!cur, plugin.getConfigManager().isStartedDisableMobSpawning(),</span>
+<span class="nc" id="L296">                        plugin.getConfigManager().isStartingDisableMobDamage(), plugin.getConfigManager().isStartedDisableMobDamage());</span>
+<span class="nc" id="L297">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L298">                openPhasesMenu(player);</span>
+<span class="nc" id="L299">            }</span>
+            case 12 -&gt; {
+<span class="nc" id="L301">                boolean cur = plugin.getConfigManager().isStartingDisableMobDamage();</span>
+<span class="nc" id="L302">                plugin.getConfigManager().setPhaseMobProtection(plugin.getConfigManager().isStartingDisableMobSpawning(),</span>
+<span class="nc bnc" id="L303" title="All 2 branches missed.">                        plugin.getConfigManager().isStartedDisableMobSpawning(), !cur, plugin.getConfigManager().isStartedDisableMobDamage());</span>
+<span class="nc" id="L304">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L305">                openPhasesMenu(player);</span>
+<span class="nc" id="L306">            }</span>
+            case 14 -&gt; {
+<span class="nc" id="L308">                String cur = plugin.getConfigManager().getStartedDifficulty();</span>
+<span class="nc" id="L309">                plugin.getConfigManager().setPhaseDifficulties(plugin.getConfigManager().getStartingDifficulty(), cycleDiff(cur));</span>
+<span class="nc" id="L310">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L311">                openPhasesMenu(player);</span>
+<span class="nc" id="L312">            }</span>
+            case 15 -&gt; {
+<span class="nc" id="L314">                boolean cur = plugin.getConfigManager().isStartedDisableMobSpawning();</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                plugin.getConfigManager().setPhaseMobProtection(plugin.getConfigManager().isStartingDisableMobSpawning(),</span>
+<span class="nc" id="L316">                        !cur, plugin.getConfigManager().isStartingDisableMobDamage(), plugin.getConfigManager().isStartedDisableMobDamage());</span>
+<span class="nc" id="L317">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L318">                openPhasesMenu(player);</span>
+<span class="nc" id="L319">            }</span>
+            case 16 -&gt; {
+<span class="nc" id="L321">                boolean cur = plugin.getConfigManager().isStartedDisableMobDamage();</span>
+<span class="nc" id="L322">                plugin.getConfigManager().setPhaseMobProtection(plugin.getConfigManager().isStartingDisableMobSpawning(),</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">                        plugin.getConfigManager().isStartedDisableMobSpawning(), plugin.getConfigManager().isStartingDisableMobDamage(), !cur);</span>
+<span class="nc" id="L324">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L325">                openPhasesMenu(player);</span>
+<span class="nc" id="L326">            }</span>
+<span class="nc" id="L327">            case 31 -&gt; prompt(player, PlayerMenuState.InputMode.MIN_PLAYERS, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fEnter min players to start (0=off):&quot;));</span>
+<span class="nc" id="L328">            case 40 -&gt; openMainMenu(player);</span>
+        }
+<span class="nc" id="L330">    }</span>
+
+    // =========================================================================
+    //  CHAT INPUT
+    // =========================================================================
+
+    @EventHandler
+    public void onPlayerChat(AsyncPlayerChatEvent event) {
+<span class="nc" id="L338">        Player player = event.getPlayer();</span>
+<span class="nc" id="L339">        PlayerMenuState ms = menuStates.get(player.getUniqueId());</span>
+<span class="nc bnc" id="L340" title="All 4 branches missed.">        if (ms == null || !ms.isAwaitingInput()) return;</span>
+
+<span class="nc" id="L342">        event.setCancelled(true);</span>
+<span class="nc" id="L343">        String raw  = event.getMessage().trim();</span>
+<span class="nc" id="L344">        PlayerMenuState.InputMode mode = ms.getInputMode();</span>
+<span class="nc" id="L345">        ms.clearInputMode();</span>
+
+<span class="nc" id="L347">        Bukkit.getScheduler().runTask(plugin, () -&gt; processChatInput(player, mode, raw));</span>
+<span class="nc" id="L348">    }</span>
+
+    private void processChatInput(Player player, PlayerMenuState.InputMode mode, String raw) {
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        if (raw.equalsIgnoreCase(&quot;cancel&quot;)) {</span>
+<span class="nc" id="L352">            MessageUtils.sendInfo(player, &quot;Cancelled.&quot;);</span>
+<span class="nc" id="L353">            reopen(player);</span>
+<span class="nc" id="L354">            return;</span>
+        }
+
+<span class="nc bnc" id="L357" title="All 11 branches missed.">        switch (mode) {</span>
+            case COUNTDOWN_DURATION -&gt; {
+<span class="nc bnc" id="L359" title="All 2 branches missed.">                Integer v = parseInt(player, raw, 1); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L360">                plugin.getConfigManager().setCountdownDuration(v);</span>
+<span class="nc" id="L361">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L362">                MessageUtils.sendSuccess(player, &quot;Countdown duration set to &amp;f&quot; + v + &quot;s&amp;7.&quot;);</span>
+<span class="nc" id="L363">                openCountdownMenu(player);</span>
+<span class="nc" id="L364">            }</span>
+            case COOLDOWN_DURATION -&gt; {
+<span class="nc bnc" id="L366" title="All 2 branches missed.">                Integer v = parseInt(player, raw, 1); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L367">                plugin.getConfigManager().setCooldownDuration(v);</span>
+<span class="nc" id="L368">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L369">                MessageUtils.sendSuccess(player, &quot;Cooldown duration set to &amp;f&quot; + v + &quot;s&amp;7.&quot;);</span>
+<span class="nc" id="L370">                openCountdownMenu(player);</span>
+<span class="nc" id="L371">            }</span>
+            case PRE_BORDER_SIZE -&gt; {
+<span class="nc bnc" id="L373" title="All 2 branches missed.">                Double v = parseDouble(player, raw, 1); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L374">                plugin.getConfigManager().setPreStartBorderSize(v);</span>
+<span class="nc" id="L375">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L376">                MessageUtils.sendSuccess(player, &quot;Pre-start border set to &amp;f&quot; + fmt(v) + &quot; blocks&amp;7.&quot;);</span>
+<span class="nc" id="L377">                openBorderMenu(player);</span>
+<span class="nc" id="L378">            }</span>
+            case FINAL_BORDER_SIZE -&gt; {
+<span class="nc bnc" id="L380" title="All 2 branches missed.">                Double v = parseDouble(player, raw, 1); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L381">                plugin.getConfigManager().setFinalBorderSize(v);</span>
+<span class="nc" id="L382">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L383">                MessageUtils.sendSuccess(player, &quot;Final border set to &amp;f&quot; + fmt(v) + &quot; blocks&amp;7.&quot;);</span>
+<span class="nc" id="L384">                openBorderMenu(player);</span>
+<span class="nc" id="L385">            }</span>
+            case BORDER_TRANSITION -&gt; {
+<span class="nc bnc" id="L387" title="All 2 branches missed.">                Integer v = parseInt(player, raw, 0); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L388">                plugin.getConfigManager().setBorderTransitionSeconds(v);</span>
+<span class="nc" id="L389">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L390">                MessageUtils.sendSuccess(player, &quot;Border transition set to &amp;f&quot; + v + &quot;s&amp;7.&quot;);</span>
+<span class="nc" id="L391">                openBorderMenu(player);</span>
+<span class="nc" id="L392">            }</span>
+            case BORDER_CENTER_X -&gt; {
+<span class="nc bnc" id="L394" title="All 2 branches missed.">                Double v = parseAnyDouble(player, raw); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L395">                pendingBorderX.put(player.getUniqueId(), v);</span>
+<span class="nc" id="L396">                prompt(player, PlayerMenuState.InputMode.BORDER_CENTER_Z, MessageUtils.color(&quot;&amp;#00FBFF&amp;l» &amp;fNow enter the Z coordinate:&quot;));</span>
+<span class="nc" id="L397">            }</span>
+            case BORDER_CENTER_Z -&gt; {
+<span class="nc bnc" id="L399" title="All 2 branches missed.">                Double v = parseAnyDouble(player, raw); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L400">                double x = pendingBorderX.getOrDefault(player.getUniqueId(), plugin.getConfigManager().getBorderCenterX());</span>
+<span class="nc" id="L401">                pendingBorderX.remove(player.getUniqueId());</span>
+<span class="nc" id="L402">                plugin.getConfigManager().setBorderCenterPosition(x, v);</span>
+<span class="nc" id="L403">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L404">                MessageUtils.sendSuccess(player, &quot;Border center set to &amp;fX=&quot; + x + &quot; Z=&quot; + v + &quot;&amp;7.&quot;);</span>
+<span class="nc" id="L405">                openBorderMenu(player);</span>
+<span class="nc" id="L406">            }</span>
+            case PVP_DURATION -&gt; {
+<span class="nc bnc" id="L408" title="All 2 branches missed.">                Integer v = parseInt(player, raw, 0); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L409">                plugin.getConfigManager().setPvpProtectionDuration(v);</span>
+<span class="nc" id="L410">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L411">                MessageUtils.sendSuccess(player, &quot;PvP protection set to &amp;f&quot; + v + &quot; min&amp;7.&quot;);</span>
+<span class="nc" id="L412">                openPvpMenu(player);</span>
+<span class="nc" id="L413">            }</span>
+            case MIN_PLAYERS -&gt; {
+<span class="nc bnc" id="L415" title="All 2 branches missed.">                Integer v = parseInt(player, raw, 0); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L416">                plugin.getConfigManager().setMinOnlinePlayers(v);</span>
+<span class="nc" id="L417">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L418">                MessageUtils.sendSuccess(player, &quot;Min players set to &amp;f&quot; + v + &quot;&amp;7.&quot;);</span>
+<span class="nc" id="L419">                openPhasesMenu(player);</span>
+<span class="nc" id="L420">            }</span>
+            case REMINDER_INTERVAL -&gt; {
+<span class="nc bnc" id="L422" title="All 2 branches missed.">                Integer v = parseInt(player, raw, 1); if (v == null) { reopen(player); return; }</span>
+<span class="nc" id="L423">                plugin.getConfigManager().setReminderInterval(v);</span>
+<span class="nc" id="L424">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L425">                MessageUtils.sendSuccess(player, &quot;Reminder interval set to &amp;f&quot; + v + &quot;s&amp;7.&quot;);</span>
+<span class="nc" id="L426">                openRemindersMenu(player);</span>
+<span class="nc" id="L427">            }</span>
+<span class="nc" id="L428">            default -&gt; reopen(player);</span>
+        }
+<span class="nc" id="L430">    }</span>
+
+    // =========================================================================
+    //  HELPERS
+    // =========================================================================
+
+    private void prompt(Player player, PlayerMenuState.InputMode mode, String msg) {
+<span class="nc" id="L437">        player.closeInventory();</span>
+<span class="nc" id="L438">        menuStates.computeIfAbsent(player.getUniqueId(), PlayerMenuState::new).setInputMode(mode);</span>
+<span class="nc" id="L439">        player.sendMessage(&quot;&quot;);</span>
+<span class="nc" id="L440">        player.sendMessage(msg);</span>
+<span class="nc" id="L441">        player.sendMessage(MessageUtils.color(&quot;&amp;7Type &amp;f\&quot;cancel\&quot; &amp;7to go back.&quot;));</span>
+<span class="nc" id="L442">        player.sendMessage(&quot;&quot;);</span>
+<span class="nc" id="L443">    }</span>
+
+    private void reopen(Player player) {
+<span class="nc" id="L446">        String t = openMenus.get(player.getUniqueId());</span>
+<span class="nc bnc" id="L447" title="All 2 branches missed.">        if      (t == null)                  openMainMenu(player);</span>
+<span class="nc bnc" id="L448" title="All 2 branches missed.">        else if (t.equals(TITLE_COUNTDOWN))  openCountdownMenu(player);</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">        else if (t.equals(TITLE_BORDER))     openBorderMenu(player);</span>
+<span class="nc bnc" id="L450" title="All 2 branches missed.">        else if (t.equals(TITLE_PVP))        openPvpMenu(player);</span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">        else if (t.equals(TITLE_REMINDERS))  openRemindersMenu(player);</span>
+<span class="nc bnc" id="L452" title="All 2 branches missed.">        else if (t.equals(TITLE_PHASES))     openPhasesMenu(player);</span>
+<span class="nc" id="L453">        else                                 openMainMenu(player);</span>
+<span class="nc" id="L454">    }</span>
+
+    private ItemStack pane(Material mat, String name, String... lore) {
+<span class="nc" id="L457">        ItemStack item = new ItemStack(mat);</span>
+<span class="nc" id="L458">        ItemMeta  meta = item.getItemMeta();</span>
+<span class="nc bnc" id="L459" title="All 2 branches missed.">        if (meta == null) return item;</span>
+<span class="nc" id="L460">        meta.setDisplayName(name);</span>
+<span class="nc bnc" id="L461" title="All 2 branches missed.">        if (lore.length &gt; 0) {</span>
+<span class="nc" id="L462">            List&lt;String&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L463" title="All 2 branches missed.">            for (String s : lore) list.add(MessageUtils.color(s));</span>
+<span class="nc" id="L464">            meta.setLore(list);</span>
+        }
+<span class="nc" id="L466">        item.setItemMeta(meta);</span>
+<span class="nc" id="L467">        return item;</span>
+    }
+
+    private void fill(Inventory inv, Material mat, int... slots) {
+<span class="nc" id="L471">        ItemStack p = pane(mat, &quot; &quot;);</span>
+<span class="nc bnc" id="L472" title="All 2 branches missed.">        for (int s : slots) inv.setItem(s, p);</span>
+<span class="nc" id="L473">    }</span>
+
+    private boolean isOurMenu(String t) {
+<span class="nc bnc" id="L476" title="All 6 branches missed.">        return t.equals(TITLE_MAIN) || t.equals(TITLE_COUNTDOWN) || t.equals(TITLE_BORDER)</span>
+<span class="nc bnc" id="L477" title="All 6 branches missed.">                || t.equals(TITLE_PVP) || t.equals(TITLE_REMINDERS) || t.equals(TITLE_PHASES);</span>
+    }
+
+    private boolean isSmpStarted() {
+<span class="nc bnc" id="L481" title="All 2 branches missed.">        if (plugin.getStateManager() instanceof StateManagerImpl impl)</span>
+<span class="nc" id="L482">            return impl.getStateData().isSmpStarted();</span>
+<span class="nc" id="L483">        return false;</span>
+    }
+
+    private String cycleDiff(String cur) {
+<span class="nc bnc" id="L487" title="All 6 branches missed.">        return switch (cur == null ? &quot;&quot; : cur.toLowerCase()) {</span>
+<span class="nc" id="L488">            case &quot;peaceful&quot; -&gt; &quot;easy&quot;;</span>
+<span class="nc" id="L489">            case &quot;easy&quot;     -&gt; &quot;normal&quot;;</span>
+<span class="nc" id="L490">            case &quot;normal&quot;   -&gt; &quot;hard&quot;;</span>
+<span class="nc" id="L491">            default         -&gt; &quot;peaceful&quot;;</span>
+        };
+    }
+
+    private String fmt(double v) {
+<span class="nc bnc" id="L496" title="All 2 branches missed.">        return v == Math.floor(v) ? String.valueOf((long) v) : String.valueOf(v);</span>
+    }
+
+    private Integer parseInt(Player p, String s, int min) {
+        try {
+<span class="nc" id="L501">            int v = Integer.parseInt(s);</span>
+<span class="nc bnc" id="L502" title="All 2 branches missed.">            if (v &lt; min) { MessageUtils.sendError(p, &quot;Must be at least &amp;f&quot; + min + &quot;&amp;7.&quot;); return null; }</span>
+<span class="nc" id="L503">            return v;</span>
+<span class="nc" id="L504">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L505">            MessageUtils.sendError(p, &quot;Invalid number: &amp;f&quot; + s);</span>
+<span class="nc" id="L506">            return null;</span>
+        }
+    }
+
+    private Double parseDouble(Player p, String s, double min) {
+        try {
+<span class="nc" id="L512">            double v = Double.parseDouble(s);</span>
+<span class="nc bnc" id="L513" title="All 2 branches missed.">            if (v &lt; min) { MessageUtils.sendError(p, &quot;Must be at least &amp;f&quot; + min + &quot;&amp;7.&quot;); return null; }</span>
+<span class="nc" id="L514">            return v;</span>
+<span class="nc" id="L515">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L516">            MessageUtils.sendError(p, &quot;Invalid number: &amp;f&quot; + s);</span>
+<span class="nc" id="L517">            return null;</span>
+        }
+    }
+
+    private Double parseAnyDouble(Player p, String s) {
+<span class="nc" id="L522">        try { return Double.parseDouble(s); }</span>
+<span class="nc" id="L523">        catch (NumberFormatException e) { MessageUtils.sendError(p, &quot;Invalid number: &amp;f&quot; + s); return null; }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

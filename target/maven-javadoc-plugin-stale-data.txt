@@ -1,0 +1,72 @@
+@options
+@packages
+-classpath
+'/root/.m2/repository/org/spigotmc/spigot-api/1.19.4-R0.1-SNAPSHOT/spigot-api-1.19.4-R0.1-SNAPSHOT.jar:/root/.m2/repository/com/google/guava/guava/31.1-jre/guava-31.1-jre.jar:/root/.m2/repository/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar:/root/.m2/repository/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar:/root/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar:/root/.m2/repository/org/checkerframework/checker-qual/3.12.0/checker-qual-3.12.0.jar:/root/.m2/repository/com/google/errorprone/error_prone_annotations/2.11.0/error_prone_annotations-2.11.0.jar:/root/.m2/repository/com/google/j2objc/j2objc-annotations/1.3/j2objc-annotations-1.3.jar:/root/.m2/repository/com/google/code/gson/gson/2.10/gson-2.10.jar:/root/.m2/repository/org/joml/joml/1.10.5/joml-1.10.5.jar:/root/.m2/repository/net/md-5/bungeecord-chat/1.16-R0.4/bungeecord-chat-1.16-R0.4.jar:/root/.m2/repository/org/yaml/snakeyaml/1.33/snakeyaml-1.33.jar'
+-encoding
+'UTF-8'
+-protected
+-source
+'17'
+-sourcepath
+'/workspace/src/main/java:/workspace/target/generated-sources/annotations'
+-author
+-bottom
+'Copyright &#169; 2026. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/workspace/target/apidocs'
+-docencoding
+'UTF-8'
+-Xdoclint:none
+-doctitle
+'SMP Start Plugin 1.0.0 API'
+-use
+-version
+-windowtitle
+'SMP Start Plugin 1.0.0 API'
+com.muzlik.smpstart.menu
+com.muzlik.smpstart.commands
+com.muzlik.smpstart.commands.subcommands
+com.muzlik.smpstart.utils
+com.muzlik.smpstart.pvp
+com.muzlik.smpstart.state
+com.muzlik.smpstart.effects
+com.muzlik.smpstart
+com.muzlik.smpstart.protection
+com.muzlik.smpstart.persistence
+com.muzlik.smpstart.config
+com.muzlik.smpstart.border
+com.muzlik.smpstart.data
+com.muzlik.smpstart.reminders
+/root/.m2/repository/org/spigotmc/spigot-api/1.19.4-R0.1-SNAPSHOT/spigot-api-1.19.4-R0.1-SNAPSHOT.jar = 1784311487857
+/root/.m2/repository/com/google/guava/guava/31.1-jre/guava-31.1-jre.jar = 1784311489014
+/root/.m2/repository/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar = 1784311488291
+/root/.m2/repository/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar = 1784311488231
+/root/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar = 1784311488332
+/root/.m2/repository/org/checkerframework/checker-qual/3.12.0/checker-qual-3.12.0.jar = 1784311488496
+/root/.m2/repository/com/google/errorprone/error_prone_annotations/2.11.0/error_prone_annotations-2.11.0.jar = 1784311488311
+/root/.m2/repository/com/google/j2objc/j2objc-annotations/1.3/j2objc-annotations-1.3.jar = 1784311488351
+/root/.m2/repository/com/google/code/gson/gson/2.10/gson-2.10.jar = 1784311488431
+/root/.m2/repository/org/joml/joml/1.10.5/joml-1.10.5.jar = 1784311488572
+/root/.m2/repository/net/md-5/bungeecord-chat/1.16-R0.4/bungeecord-chat-1.16-R0.4.jar = 1784311488492
+/root/.m2/repository/org/yaml/snakeyaml/1.33/snakeyaml-1.33.jar = 1784311488553
+/workspace/src/main/java = 1784304592000
+/workspace/target/generated-sources/annotations = 1784311913592
+/workspace/target/apidocs/script.js = 1784311942634
+/workspace/target/apidocs/module-search-index.js = 1784311942312
+/workspace/target/apidocs/stylesheet.css = 1784311942634
+/workspace/target/apidocs/package-search-index.js = 1784311942312
+/workspace/target/apidocs/jquery-ui.overrides.css = 1784311942653
+/workspace/target/apidocs/type-search-index.js = 1784311942313
+/workspace/target/apidocs/tag-search-index.js = 1784311942332
+/workspace/target/apidocs/element-list = 1784311941513
+/workspace/target/apidocs/index.html = 1784311942152
+/workspace/target/apidocs/allpackages-index.html = 1784311942311
+/workspace/target/apidocs/help-doc.html = 1784311942613
+/workspace/target/apidocs/member-search-index.js = 1784311942332
+/workspace/target/apidocs/index-all.html = 1784311942611
+/workspace/target/apidocs/allclasses-index.html = 1784311942292
+/workspace/target/apidocs/overview-summary.html = 1784311942613
+/workspace/target/apidocs/overview-tree.html = 1784311942114
+/workspace/target/apidocs/search.js = 1784311942651

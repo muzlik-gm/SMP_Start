@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResetSubCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.commands.subcommands</a> &gt; <span class="el_source">ResetSubCommand.java</span></div><h1>ResetSubCommand.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.commands.subcommands;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import com.muzlik.smpstart.commands.SubCommand;
+import com.muzlik.smpstart.utils.MessageUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * /smp reset — resets the SMP back to pre-start state.
+ */
+public class ResetSubCommand implements SubCommand {
+
+    private final SMPStartPlugin plugin;
+
+<span class="nc" id="L19">    public ResetSubCommand(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L20">        this.plugin = plugin;</span>
+<span class="nc" id="L21">    }</span>
+
+<span class="nc" id="L23">    @Override public String getName()        { return &quot;reset&quot;; }</span>
+<span class="nc" id="L24">    @Override public String getPermission()  { return &quot;smpstart.reset&quot;; }</span>
+<span class="nc" id="L25">    @Override public String getUsage()       { return &quot;reset&quot;; }</span>
+<span class="nc" id="L26">    @Override public String getDescription() { return &quot;Reset the SMP to pre-start state.&quot;; }</span>
+
+    @Override
+    public boolean execute(CommandSender sender, String[] args) {
+<span class="nc" id="L30">        plugin.getStateManager().resetSmp();</span>
+<span class="nc" id="L31">        Bukkit.broadcastMessage(MessageUtils.color(&quot;&amp;#00FBFF&amp;lSMP » &amp;#FF5555SMP has been reset by &amp;f&quot; + sender.getName() + &quot;&amp;FF5555.&quot;));</span>
+<span class="nc" id="L32">        return true;</span>
+    }
+
+    @Override
+    public List&lt;String&gt; tabComplete(CommandSender sender, String[] args) {
+<span class="nc" id="L37">        return Collections.emptyList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

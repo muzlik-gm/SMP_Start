@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PluginConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.data</a> &gt; <span class="el_source">PluginConfig.java</span></div><h1>PluginConfig.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.data;
+
+/**
+ * Data model for plugin configuration
+ */
+<span class="fc" id="L6">public class PluginConfig {</span>
+    
+    // Default configuration values
+<span class="fc" id="L9">    private int countdownDuration = 10; // seconds</span>
+<span class="fc" id="L10">    private int cooldownDuration = 60; // seconds</span>
+<span class="fc" id="L11">    private double preStartBorderSize = 10.0; // blocks (diameter)</span>
+<span class="fc" id="L12">    private double finalBorderSize = 10000.0; // blocks (diameter)</span>
+<span class="fc" id="L13">    private boolean joinRemindersEnabled = true;</span>
+<span class="fc" id="L14">    private int reminderInterval = 60; // seconds</span>
+<span class="fc" id="L15">    private int pvpProtectionDuration = 30; // minutes</span>
+<span class="fc" id="L16">    private String worldName = &quot;&quot;; // empty means default world</span>
+<span class="fc" id="L17">    private int minOnlinePlayers = 1;</span>
+<span class="fc" id="L18">    private boolean countdownBossBarEnabled = true;</span>
+<span class="fc" id="L19">    private String borderCenterMode = &quot;spawn&quot;;</span>
+<span class="fc" id="L20">    private double borderCenterX = 0.0;</span>
+<span class="fc" id="L21">    private double borderCenterZ = 0.0;</span>
+<span class="fc" id="L22">    private int borderTransitionSeconds = 10;</span>
+<span class="fc" id="L23">    private double preStartBorderDamageAmount = 0.0;</span>
+<span class="fc" id="L24">    private double preStartBorderDamageBuffer = 0.0;</span>
+<span class="fc" id="L25">    private double borderDamageAmount = 0.2;</span>
+<span class="fc" id="L26">    private double borderDamageBuffer = 5.0;</span>
+<span class="fc" id="L27">    private String startingDifficulty = &quot;peaceful&quot;;</span>
+<span class="fc" id="L28">    private String startedDifficulty = &quot;normal&quot;;</span>
+<span class="fc" id="L29">    private boolean startingDisableMobSpawning = true;</span>
+<span class="fc" id="L30">    private boolean startedDisableMobSpawning = false;</span>
+<span class="fc" id="L31">    private boolean startingDisableMobDamage = true;</span>
+<span class="fc" id="L32">    private boolean startedDisableMobDamage = false;</span>
+<span class="fc" id="L33">    private boolean preStartBlockProtectionEnabled = true;</span>
+    
+    // Getters
+    public int getCountdownDuration() {
+<span class="fc" id="L37">        return countdownDuration;</span>
+    }
+    
+    public int getCooldownDuration() {
+<span class="fc" id="L41">        return cooldownDuration;</span>
+    }
+    
+    public double getPreStartBorderSize() {
+<span class="fc" id="L45">        return preStartBorderSize;</span>
+    }
+    
+    public double getFinalBorderSize() {
+<span class="fc" id="L49">        return finalBorderSize;</span>
+    }
+    
+    public boolean isJoinRemindersEnabled() {
+<span class="fc" id="L53">        return joinRemindersEnabled;</span>
+    }
+    
+    public int getReminderInterval() {
+<span class="fc" id="L57">        return reminderInterval;</span>
+    }
+    
+    public int getPvpProtectionDuration() {
+<span class="fc" id="L61">        return pvpProtectionDuration;</span>
+    }
+    
+    public String getWorldName() {
+<span class="fc" id="L65">        return worldName;</span>
+    }
+    
+    public int getMinOnlinePlayers() {
+<span class="fc" id="L69">        return minOnlinePlayers;</span>
+    }
+    
+    public boolean isCountdownBossBarEnabled() {
+<span class="fc" id="L73">        return countdownBossBarEnabled;</span>
+    }
+    
+    public String getBorderCenterMode() {
+<span class="fc" id="L77">        return borderCenterMode;</span>
+    }
+    
+    public double getBorderCenterX() {
+<span class="fc" id="L81">        return borderCenterX;</span>
+    }
+    
+    public double getBorderCenterZ() {
+<span class="fc" id="L85">        return borderCenterZ;</span>
+    }
+    
+    public int getBorderTransitionSeconds() {
+<span class="fc" id="L89">        return borderTransitionSeconds;</span>
+    }
+    
+    public double getPreStartBorderDamageAmount() {
+<span class="fc" id="L93">        return preStartBorderDamageAmount;</span>
+    }
+    
+    public double getPreStartBorderDamageBuffer() {
+<span class="fc" id="L97">        return preStartBorderDamageBuffer;</span>
+    }
+    
+    public double getBorderDamageAmount() {
+<span class="fc" id="L101">        return borderDamageAmount;</span>
+    }
+    
+    public double getBorderDamageBuffer() {
+<span class="fc" id="L105">        return borderDamageBuffer;</span>
+    }
+    
+    public String getStartingDifficulty() {
+<span class="fc" id="L109">        return startingDifficulty;</span>
+    }
+    
+    public String getStartedDifficulty() {
+<span class="fc" id="L113">        return startedDifficulty;</span>
+    }
+    
+    public boolean isStartingDisableMobSpawning() {
+<span class="fc" id="L117">        return startingDisableMobSpawning;</span>
+    }
+    
+    public boolean isStartedDisableMobSpawning() {
+<span class="fc" id="L121">        return startedDisableMobSpawning;</span>
+    }
+    
+    public boolean isStartingDisableMobDamage() {
+<span class="fc" id="L125">        return startingDisableMobDamage;</span>
+    }
+    
+    public boolean isStartedDisableMobDamage() {
+<span class="fc" id="L129">        return startedDisableMobDamage;</span>
+    }
+
+    public boolean isPreStartBlockProtectionEnabled() {
+<span class="nc" id="L133">        return preStartBlockProtectionEnabled;</span>
+    }
+    
+    // Setters
+    public void setCountdownDuration(int countdownDuration) {
+<span class="fc" id="L138">        this.countdownDuration = countdownDuration;</span>
+<span class="fc" id="L139">    }</span>
+    
+    public void setCooldownDuration(int countdownDuration) {
+<span class="fc" id="L142">        this.cooldownDuration = countdownDuration;</span>
+<span class="fc" id="L143">    }</span>
+    
+    public void setPreStartBorderSize(double preStartBorderSize) {
+<span class="fc" id="L146">        this.preStartBorderSize = preStartBorderSize;</span>
+<span class="fc" id="L147">    }</span>
+    
+    public void setFinalBorderSize(double finalBorderSize) {
+<span class="fc" id="L150">        this.finalBorderSize = finalBorderSize;</span>
+<span class="fc" id="L151">    }</span>
+    
+    public void setJoinRemindersEnabled(boolean joinRemindersEnabled) {
+<span class="fc" id="L154">        this.joinRemindersEnabled = joinRemindersEnabled;</span>
+<span class="fc" id="L155">    }</span>
+    
+    public void setReminderInterval(int reminderInterval) {
+<span class="fc" id="L158">        this.reminderInterval = reminderInterval;</span>
+<span class="fc" id="L159">    }</span>
+    
+    public void setPvpProtectionDuration(int pvpProtectionDuration) {
+<span class="nc" id="L162">        this.pvpProtectionDuration = pvpProtectionDuration;</span>
+<span class="nc" id="L163">    }</span>
+    
+    public void setWorldName(String worldName) {
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        this.worldName = worldName != null ? worldName : &quot;&quot;;</span>
+<span class="fc" id="L167">    }</span>
+    
+    public void setMinOnlinePlayers(int minOnlinePlayers) {
+<span class="fc" id="L170">        this.minOnlinePlayers = minOnlinePlayers;</span>
+<span class="fc" id="L171">    }</span>
+    
+    public void setCountdownBossBarEnabled(boolean countdownBossBarEnabled) {
+<span class="fc" id="L174">        this.countdownBossBarEnabled = countdownBossBarEnabled;</span>
+<span class="fc" id="L175">    }</span>
+    
+    public void setBorderCenterMode(String borderCenterMode) {
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        this.borderCenterMode = borderCenterMode != null ? borderCenterMode : &quot;spawn&quot;;</span>
+<span class="fc" id="L179">    }</span>
+    
+    public void setBorderCenterX(double borderCenterX) {
+<span class="fc" id="L182">        this.borderCenterX = borderCenterX;</span>
+<span class="fc" id="L183">    }</span>
+    
+    public void setBorderCenterZ(double borderCenterZ) {
+<span class="fc" id="L186">        this.borderCenterZ = borderCenterZ;</span>
+<span class="fc" id="L187">    }</span>
+    
+    public void setBorderTransitionSeconds(int borderTransitionSeconds) {
+<span class="fc" id="L190">        this.borderTransitionSeconds = borderTransitionSeconds;</span>
+<span class="fc" id="L191">    }</span>
+    
+    public void setPreStartBorderDamageAmount(double preStartBorderDamageAmount) {
+<span class="fc" id="L194">        this.preStartBorderDamageAmount = preStartBorderDamageAmount;</span>
+<span class="fc" id="L195">    }</span>
+    
+    public void setPreStartBorderDamageBuffer(double preStartBorderDamageBuffer) {
+<span class="fc" id="L198">        this.preStartBorderDamageBuffer = preStartBorderDamageBuffer;</span>
+<span class="fc" id="L199">    }</span>
+    
+    public void setBorderDamageAmount(double borderDamageAmount) {
+<span class="fc" id="L202">        this.borderDamageAmount = borderDamageAmount;</span>
+<span class="fc" id="L203">    }</span>
+    
+    public void setBorderDamageBuffer(double borderDamageBuffer) {
+<span class="fc" id="L206">        this.borderDamageBuffer = borderDamageBuffer;</span>
+<span class="fc" id="L207">    }</span>
+    
+    public void setStartingDifficulty(String startingDifficulty) {
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        this.startingDifficulty = startingDifficulty != null ? startingDifficulty : &quot;peaceful&quot;;</span>
+<span class="fc" id="L211">    }</span>
+    
+    public void setStartedDifficulty(String startedDifficulty) {
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        this.startedDifficulty = startedDifficulty != null ? startedDifficulty : &quot;normal&quot;;</span>
+<span class="fc" id="L215">    }</span>
+    
+    public void setStartingDisableMobSpawning(boolean startingDisableMobSpawning) {
+<span class="fc" id="L218">        this.startingDisableMobSpawning = startingDisableMobSpawning;</span>
+<span class="fc" id="L219">    }</span>
+    
+    public void setStartedDisableMobSpawning(boolean startedDisableMobSpawning) {
+<span class="fc" id="L222">        this.startedDisableMobSpawning = startedDisableMobSpawning;</span>
+<span class="fc" id="L223">    }</span>
+    
+    public void setStartingDisableMobDamage(boolean startingDisableMobDamage) {
+<span class="fc" id="L226">        this.startingDisableMobDamage = startingDisableMobDamage;</span>
+<span class="fc" id="L227">    }</span>
+    
+    public void setStartedDisableMobDamage(boolean startedDisableMobDamage) {
+<span class="fc" id="L230">        this.startedDisableMobDamage = startedDisableMobDamage;</span>
+<span class="fc" id="L231">    }</span>
+
+    public void setPreStartBlockProtectionEnabled(boolean preStartBlockProtectionEnabled) {
+<span class="nc" id="L234">        this.preStartBlockProtectionEnabled = preStartBlockProtectionEnabled;</span>
+<span class="nc" id="L235">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

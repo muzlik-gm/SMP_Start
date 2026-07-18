@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StatusSubCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.commands.subcommands</a> &gt; <span class="el_source">StatusSubCommand.java</span></div><h1>StatusSubCommand.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.commands.subcommands;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import com.muzlik.smpstart.commands.SubCommand;
+import com.muzlik.smpstart.state.StateManager.PluginState;
+import com.muzlik.smpstart.state.StateManagerImpl;
+import com.muzlik.smpstart.utils.MessageUtils;
+import org.bukkit.command.CommandSender;
+
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * /smp status — shows current plugin state and configuration.
+ */
+public class StatusSubCommand implements SubCommand {
+
+    private final SMPStartPlugin plugin;
+
+<span class="nc" id="L20">    public StatusSubCommand(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L21">        this.plugin = plugin;</span>
+<span class="nc" id="L22">    }</span>
+
+<span class="nc" id="L24">    @Override public String getName()        { return &quot;status&quot;; }</span>
+<span class="nc" id="L25">    @Override public List&lt;String&gt; getAliases() { return List.of(&quot;st&quot;, &quot;info&quot;); }</span>
+<span class="nc" id="L26">    @Override public String getPermission()  { return &quot;smpstart.use&quot;; }</span>
+<span class="nc" id="L27">    @Override public String getUsage()       { return &quot;status&quot;; }</span>
+<span class="nc" id="L28">    @Override public String getDescription() { return &quot;Show current state and configuration.&quot;; }</span>
+
+    @Override
+    public boolean execute(CommandSender sender, String[] args) {
+<span class="nc" id="L32">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc" id="L33">        MessageUtils.sendRawMessage(sender, &quot;&amp;#00FBFF&amp;lMUZLIK'S SMP STARTER &amp;7- &amp;fStatus&quot;);</span>
+<span class="nc" id="L34">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+
+<span class="nc" id="L36">        PluginState state = plugin.getStateManager().getCurrentState();</span>
+<span class="nc" id="L37">        MessageUtils.sendRawMessage(sender, line(&quot;State&quot;, state.name()));</span>
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (plugin.getStateManager() instanceof StateManagerImpl) {</span>
+<span class="nc" id="L40">            boolean started = ((StateManagerImpl) plugin.getStateManager()).getStateData().isSmpStarted();</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            MessageUtils.sendRawMessage(sender, line(&quot;SMP Started&quot;, started ? &quot;&amp;aYes&quot; : &quot;&amp;cNo&quot;));</span>
+        }
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (state == PluginState.COUNTDOWN) {</span>
+<span class="nc" id="L45">            MessageUtils.sendRawMessage(sender, line(&quot;Countdown Remaining&quot;, &quot;&amp;f&quot; + plugin.getStateManager().getRemainingCountdown() + &quot;s&quot;));</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        } else if (state == PluginState.COOLDOWN) {</span>
+<span class="nc" id="L47">            MessageUtils.sendRawMessage(sender, line(&quot;Cooldown Remaining&quot;, &quot;&amp;f&quot; + plugin.getStateManager().getRemainingCooldown() + &quot;s&quot;));</span>
+        }
+
+<span class="nc" id="L50">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc" id="L51">        MessageUtils.sendRawMessage(sender, line(&quot;Countdown Duration&quot;,  &quot;&amp;f&quot; + plugin.getConfigManager().getCountdownDuration() + &quot;s&quot;));</span>
+<span class="nc" id="L52">        MessageUtils.sendRawMessage(sender, line(&quot;Cooldown Duration&quot;,   &quot;&amp;f&quot; + plugin.getConfigManager().getCooldownDuration() + &quot;s&quot;));</span>
+<span class="nc" id="L53">        MessageUtils.sendRawMessage(sender, line(&quot;Pre-start Border&quot;,    &quot;&amp;f&quot; + plugin.getConfigManager().getPreStartBorderSize() + &quot; blocks&quot;));</span>
+<span class="nc" id="L54">        MessageUtils.sendRawMessage(sender, line(&quot;Final Border&quot;,        &quot;&amp;f&quot; + plugin.getConfigManager().getFinalBorderSize() + &quot; blocks&quot;));</span>
+<span class="nc" id="L55">        MessageUtils.sendRawMessage(sender, line(&quot;PvP Protection&quot;,      &quot;&amp;f&quot; + plugin.getConfigManager().getPvpProtectionDuration() + &quot; min&quot;));</span>
+<span class="nc" id="L56">        MessageUtils.sendRawMessage(sender, line(&quot;Min Players&quot;,         &quot;&amp;f&quot; + plugin.getConfigManager().getMinOnlinePlayers()));</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        MessageUtils.sendRawMessage(sender, line(&quot;Join Reminders&quot;,      plugin.getConfigManager().areJoinRemindersEnabled() ? &quot;&amp;aEnabled&quot; : &quot;&amp;cDisabled&quot;));</span>
+<span class="nc" id="L58">        MessageUtils.sendRawMessage(sender, line(&quot;Reminder Interval&quot;,   &quot;&amp;f&quot; + plugin.getConfigManager().getReminderInterval() + &quot;s&quot;));</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        MessageUtils.sendRawMessage(sender, line(&quot;Boss Bar&quot;,            plugin.getConfigManager().isCountdownBossBarEnabled() ? &quot;&amp;aEnabled&quot; : &quot;&amp;cDisabled&quot;));</span>
+<span class="nc" id="L60">        MessageUtils.sendRawMessage(sender, line(&quot;Border Center&quot;,       &quot;&amp;f&quot; + plugin.getConfigManager().getBorderCenterMode()));</span>
+
+<span class="nc" id="L62">        String world = plugin.getConfigManager().getWorldName();</span>
+<span class="nc bnc" id="L63" title="All 4 branches missed.">        MessageUtils.sendRawMessage(sender, line(&quot;World&quot;, (world == null || world.isBlank()) ? &quot;&amp;fDefault&quot; : &quot;&amp;f&quot; + world));</span>
+<span class="nc" id="L64">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc" id="L65">        return true;</span>
+    }
+
+    @Override
+    public List&lt;String&gt; tabComplete(CommandSender sender, String[] args) {
+<span class="nc" id="L70">        return Collections.emptyList();</span>
+    }
+
+    private String line(String key, String value) {
+<span class="nc" id="L74">        return &quot; &amp;#00FBFF» &amp;b&quot; + key + &quot;: &quot; + value;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

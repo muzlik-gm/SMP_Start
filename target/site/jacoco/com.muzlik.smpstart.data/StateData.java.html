@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.data</a> &gt; <span class="el_source">StateData.java</span></div><h1>StateData.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.data;
+
+import com.muzlik.smpstart.state.StateManager.PluginState;
+
+/**
+ * Data model for plugin state information
+ */
+<span class="fc" id="L8">public class StateData {</span>
+    
+<span class="fc" id="L10">    private PluginState currentState = PluginState.IDLE;</span>
+    private long countdownStartTime;
+    private long cooldownStartTime;
+    private int remainingCountdown;
+    private int remainingCooldown;
+    private long smpStartTime; // When SMP officially started
+<span class="fc" id="L16">    private boolean pvpProtectionActive = false;</span>
+<span class="fc" id="L17">    private boolean smpStarted = false; // Whether SMP has officially started</span>
+    
+    // Getters
+    public PluginState getCurrentState() {
+<span class="fc" id="L21">        return currentState;</span>
+    }
+    
+    public long getCountdownStartTime() {
+<span class="nc" id="L25">        return countdownStartTime;</span>
+    }
+    
+    public long getCooldownStartTime() {
+<span class="nc" id="L29">        return cooldownStartTime;</span>
+    }
+    
+    public int getRemainingCountdown() {
+<span class="fc" id="L33">        return remainingCountdown;</span>
+    }
+    
+    public int getRemainingCooldown() {
+<span class="fc" id="L37">        return remainingCooldown;</span>
+    }
+    
+    public long getSmpStartTime() {
+<span class="nc" id="L41">        return smpStartTime;</span>
+    }
+    
+    public boolean isPvpProtectionActive() {
+<span class="nc" id="L45">        return pvpProtectionActive;</span>
+    }
+    
+    public boolean isSmpStarted() {
+<span class="nc" id="L49">        return smpStarted;</span>
+    }
+    
+    // Setters
+    public void setCurrentState(PluginState currentState) {
+<span class="fc" id="L54">        this.currentState = currentState;</span>
+<span class="fc" id="L55">    }</span>
+    
+    public void setCountdownStartTime(long countdownStartTime) {
+<span class="nc" id="L58">        this.countdownStartTime = countdownStartTime;</span>
+<span class="nc" id="L59">    }</span>
+    
+    public void setCooldownStartTime(long cooldownStartTime) {
+<span class="nc" id="L62">        this.cooldownStartTime = cooldownStartTime;</span>
+<span class="nc" id="L63">    }</span>
+    
+    public void setRemainingCountdown(int remainingCountdown) {
+<span class="fc" id="L66">        this.remainingCountdown = remainingCountdown;</span>
+<span class="fc" id="L67">    }</span>
+    
+    public void setRemainingCooldown(int remainingCooldown) {
+<span class="fc" id="L70">        this.remainingCooldown = remainingCooldown;</span>
+<span class="fc" id="L71">    }</span>
+    
+    public void setSmpStartTime(long smpStartTime) {
+<span class="nc" id="L74">        this.smpStartTime = smpStartTime;</span>
+<span class="nc" id="L75">    }</span>
+    
+    public void setPvpProtectionActive(boolean pvpProtectionActive) {
+<span class="nc" id="L78">        this.pvpProtectionActive = pvpProtectionActive;</span>
+<span class="nc" id="L79">    }</span>
+    
+    public void setSmpStarted(boolean smpStarted) {
+<span class="nc" id="L82">        this.smpStarted = smpStarted;</span>
+<span class="nc" id="L83">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

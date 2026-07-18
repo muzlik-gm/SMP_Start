@@ -1,0 +1,32 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+SMP Start Plugin,com.muzlik.smpstart.persistence,DataManagerImpl,229,0,8,0,52,0,9,0,5,0
+SMP Start Plugin,com.muzlik.smpstart.utils,MessageUtils,73,0,4,0,21,0,10,0,8,0
+SMP Start Plugin,com.muzlik.smpstart.utils,ErrorHandler,97,0,8,0,26,0,14,0,10,0
+SMP Start Plugin,com.muzlik.smpstart,SMPStartPlugin,606,0,74,0,145,0,58,0,21,0
+SMP Start Plugin,com.muzlik.smpstart.pvp,PvPManagerImpl.new BukkitRunnable() {...},10,0,0,0,3,0,2,0,2,0
+SMP Start Plugin,com.muzlik.smpstart.pvp,PvPManagerImpl,623,0,70,0,158,0,52,0,17,0
+SMP Start Plugin,com.muzlik.smpstart.pvp,PvPManagerImpl.new BukkitRunnable() {...},10,0,0,0,3,0,2,0,2,0
+SMP Start Plugin,com.muzlik.smpstart.menu,ConfigMenuManager,2829,0,197,0,342,0,146,0,30,0
+SMP Start Plugin,com.muzlik.smpstart.menu,PlayerMenuState,31,0,2,0,11,0,7,0,6,0
+SMP Start Plugin,com.muzlik.smpstart.menu,PlayerMenuState.InputMode,69,0,0,0,12,0,1,0,1,0
+SMP Start Plugin,com.muzlik.smpstart.state,StateManagerImpl.new BukkitRunnable() {...},10,0,0,0,3,0,2,0,2,0
+SMP Start Plugin,com.muzlik.smpstart.state,StateManagerImpl.new BukkitRunnable() {...},10,0,0,0,3,0,2,0,2,0
+SMP Start Plugin,com.muzlik.smpstart.state,StateManager.PluginState,0,21,0,0,0,4,0,1,0,1
+SMP Start Plugin,com.muzlik.smpstart.state,StateManagerImpl,1217,0,160,0,318,0,109,0,29,0
+SMP Start Plugin,com.muzlik.smpstart.border,BorderManagerImpl,568,0,48,0,138,0,34,0,10,0
+SMP Start Plugin,com.muzlik.smpstart.reminders,ReminderSystemImpl.new BukkitRunnable() {...},14,0,2,0,4,0,3,0,2,0
+SMP Start Plugin,com.muzlik.smpstart.reminders,ReminderSystemImpl,373,0,36,0,91,0,29,0,11,0
+SMP Start Plugin,com.muzlik.smpstart.config,ConfigManagerImpl,648,0,24,0,117,0,60,0,48,0
+SMP Start Plugin,com.muzlik.smpstart.effects,EffectSystemImpl,407,0,38,0,110,0,29,0,10,0
+SMP Start Plugin,com.muzlik.smpstart.commands.subcommands,ResetSubCommand,29,0,0,0,11,0,7,0,7,0
+SMP Start Plugin,com.muzlik.smpstart.commands.subcommands,ReloadSubCommand,71,0,12,0,20,0,14,0,8,0
+SMP Start Plugin,com.muzlik.smpstart.commands.subcommands,ConfigSubCommand,842,0,87,0,183,0,80,0,25,0
+SMP Start Plugin,com.muzlik.smpstart.commands.subcommands,StatusSubCommand,227,0,16,0,37,0,17,0,9,0
+SMP Start Plugin,com.muzlik.smpstart.commands.subcommands,StartSubCommand,128,0,20,0,37,0,19,0,9,0
+SMP Start Plugin,com.muzlik.smpstart.commands.subcommands,CancelSubCommand,37,0,2,0,14,0,9,0,8,0
+SMP Start Plugin,com.muzlik.smpstart.commands.subcommands,MenuSubCommand,38,0,2,0,14,0,9,0,8,0
+SMP Start Plugin,com.muzlik.smpstart.protection,BlockProtectionManagerImpl,492,0,86,0,140,0,64,0,21,0
+SMP Start Plugin,com.muzlik.smpstart.commands,SubCommand,2,0,0,0,1,0,1,0,1,0
+SMP Start Plugin,com.muzlik.smpstart.commands,CommandManagerImpl,360,0,28,0,80,0,23,0,9,0
+SMP Start Plugin,com.muzlik.smpstart.data,PluginConfig,15,254,4,4,5,96,7,48,3,48
+SMP Start Plugin,com.muzlik.smpstart.data,StateData,35,33,0,0,15,13,10,7,10,7

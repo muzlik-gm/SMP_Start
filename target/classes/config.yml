@@ -1,0 +1,109 @@
+# ┌─────────────────────────────────────────────┐
+# │        Muzlik's SMP Starter — Config        │
+# └─────────────────────────────────────────────┘
+# Use /smp config <key> [value] to change settings in-game.
+# Full documentation: https://github.com/muzlik/smp-start-plugin
+
+# ──────────────────────────────────────────────
+# General
+# ──────────────────────────────────────────────
+general:
+  # World to apply border and PvP effects to.
+  # Leave empty to use the default world.
+  world: ""
+
+  # Minimum online players required before /smp start is allowed.
+  # Set to 0 to disable the check.
+  min-players: 1
+
+  # Print extra debug information to the console.
+  debug: false
+
+# ──────────────────────────────────────────────
+# Countdown
+# ──────────────────────────────────────────────
+countdown:
+  # How long the countdown lasts, in seconds.
+  duration: 10
+
+  # How long before /smp start can be used again after a start, in seconds.
+  cooldown: 60
+
+  # Show a boss bar during the countdown.
+  bossbar: true
+
+# ──────────────────────────────────────────────
+# World Border
+# ──────────────────────────────────────────────
+border:
+  # Border size (diameter in blocks) while the SMP is in the pre-start phase.
+  pre-start-size: 10.0
+
+  # Border size (diameter in blocks) after the SMP starts.
+  final-size: 10000.0
+
+  # How long the border takes to expand from pre-start to final size, in seconds.
+  transition-seconds: 10
+
+  # Where to center the border.
+  # Options: spawn (world spawn point) | fixed (use the coordinates below)
+  center-mode: "spawn"
+
+  # Used when center-mode is "fixed".
+  center-x: 0.0
+  center-z: 0.0
+
+  # Border damage settings for the pre-start phase.
+  # Set amount to 0.0 to disable damage before the SMP starts.
+  pre-start-damage:
+    amount: 0.0
+    buffer: 0.0
+
+  # Border damage settings after the SMP starts.
+  post-start-damage:
+    amount: 0.2
+    buffer: 5.0
+
+# ──────────────────────────────────────────────
+# PvP Protection
+# ──────────────────────────────────────────────
+pvp:
+  # How many minutes of PvP protection players get after the SMP starts.
+  # Set to 0 to disable PvP protection entirely.
+  protection-duration: 30
+
+# ──────────────────────────────────────────────
+# Join Reminders
+# ──────────────────────────────────────────────
+reminders:
+  # Broadcast a reminder when OP players are still offline before the SMP starts.
+  enabled: true
+
+  # How often to send the reminder, in seconds.
+  interval: 60
+
+# ──────────────────────────────────────────────
+# Phases
+# ──────────────────────────────────────────────
+# Controls world settings for each phase of the SMP.
+phases:
+  pre-start:
+    # World difficulty before the SMP starts.
+    # Options: peaceful | easy | normal | hard
+    difficulty: "peaceful"
+
+    # Prevent mobs from spawning before the SMP starts.
+    disable-mob-spawning: true
+
+    # Prevent mobs from dealing damage before the SMP starts.
+    disable-mob-damage: true
+
+  started:
+    # World difficulty after the SMP starts.
+    difficulty: "normal"
+
+    # Keep mob spawning disabled after the SMP starts.
+    disable-mob-spawning: false
+
+    # Keep mob damage disabled after the SMP starts.
+    disable-mob-damage: false

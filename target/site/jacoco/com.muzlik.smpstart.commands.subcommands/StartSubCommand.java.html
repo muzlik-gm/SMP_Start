@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StartSubCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.commands.subcommands</a> &gt; <span class="el_source">StartSubCommand.java</span></div><h1>StartSubCommand.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.commands.subcommands;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import com.muzlik.smpstart.commands.SubCommand;
+import com.muzlik.smpstart.state.StateManager.PluginState;
+import com.muzlik.smpstart.state.StateManagerImpl;
+import com.muzlik.smpstart.utils.MessageUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.command.CommandSender;
+
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * /smp start — begins the SMP countdown sequence.
+ */
+public class StartSubCommand implements SubCommand {
+
+    private final SMPStartPlugin plugin;
+
+<span class="nc" id="L22">    public StartSubCommand(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L23">        this.plugin = plugin;</span>
+<span class="nc" id="L24">    }</span>
+
+<span class="nc" id="L26">    @Override public String getName()        { return &quot;start&quot;; }</span>
+<span class="nc" id="L27">    @Override public List&lt;String&gt; getAliases() { return List.of(&quot;s&quot;); }</span>
+<span class="nc" id="L28">    @Override public String getPermission()  { return &quot;smpstart.use&quot;; }</span>
+<span class="nc" id="L29">    @Override public String getUsage()       { return &quot;start&quot;; }</span>
+<span class="nc" id="L30">    @Override public String getDescription() { return &quot;Begin the SMP countdown sequence.&quot;; }</span>
+
+    @Override
+    public boolean execute(CommandSender sender, String[] args) {
+<span class="nc" id="L34">        boolean smpStarted = false;</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (plugin.getStateManager() instanceof StateManagerImpl) {</span>
+<span class="nc" id="L36">            smpStarted = ((StateManagerImpl) plugin.getStateManager()).getStateData().isSmpStarted();</span>
+        }
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (smpStarted) {</span>
+<span class="nc" id="L39">            MessageUtils.sendInfo(sender, &quot;The SMP has already started. Use &amp;f/smp reset &amp;7to start over.&quot;);</span>
+<span class="nc" id="L40">            return true;</span>
+        }
+
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (!plugin.getStateManager().canExecuteStart()) {</span>
+<span class="nc" id="L44">            PluginState state = plugin.getStateManager().getCurrentState();</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (state == PluginState.COUNTDOWN) {</span>
+<span class="nc" id="L46">                MessageUtils.sendInfo(sender, &quot;Countdown already active — &amp;f&quot; +</span>
+<span class="nc" id="L47">                        plugin.getStateManager().getRemainingCountdown() + &quot;s &amp;7remaining.&quot;);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            } else if (state == PluginState.COOLDOWN) {</span>
+<span class="nc" id="L49">                MessageUtils.sendInfo(sender, &quot;On cooldown — &amp;f&quot; +</span>
+<span class="nc" id="L50">                        plugin.getStateManager().getRemainingCooldown() + &quot;s &amp;7remaining.&quot;);</span>
+            }
+<span class="nc" id="L52">            return true;</span>
+        }
+
+<span class="nc" id="L55">        int minPlayers = plugin.getConfigManager().getMinOnlinePlayers();</span>
+<span class="nc" id="L56">        int online = getOnlineCount();</span>
+<span class="nc bnc" id="L57" title="All 4 branches missed.">        if (minPlayers &gt; 0 &amp;&amp; online &lt; minPlayers) {</span>
+<span class="nc" id="L58">            MessageUtils.sendError(sender, &quot;Not enough players online. Need &amp;f&quot; +</span>
+                    minPlayers + &quot;&amp;7, have &amp;f&quot; + online + &quot;&amp;7.&quot;);
+<span class="nc" id="L60">            return true;</span>
+        }
+
+<span class="nc" id="L63">        plugin.getStateManager().startCountdown();</span>
+<span class="nc" id="L64">        Bukkit.broadcastMessage(MessageUtils.color(&quot;&amp;#00FBFF&amp;lSMP » &amp;#55FF55Countdown started by &amp;f&quot; + sender.getName() + &quot;&amp;55FF55!&quot;));</span>
+<span class="nc" id="L65">        return true;</span>
+    }
+
+    @Override
+    public List&lt;String&gt; tabComplete(CommandSender sender, String[] args) {
+<span class="nc" id="L70">        return Collections.emptyList();</span>
+    }
+
+    private int getOnlineCount() {
+<span class="nc" id="L74">        String worldName = plugin.getConfigManager().getWorldName();</span>
+<span class="nc bnc" id="L75" title="All 4 branches missed.">        if (worldName != null &amp;&amp; !worldName.isBlank()) {</span>
+<span class="nc" id="L76">            World world = Bukkit.getWorld(worldName.trim());</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (world != null) return world.getPlayers().size();</span>
+        }
+<span class="nc" id="L79">        return Bukkit.getOnlinePlayers().size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

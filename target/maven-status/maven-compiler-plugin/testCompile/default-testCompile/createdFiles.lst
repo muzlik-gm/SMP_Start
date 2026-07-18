@@ -1,0 +1,14 @@
+com/muzlik/smpstart/reminders/ReminderSystemTest$1.class
+com/muzlik/smpstart/config/ConfigManagerTest.class
+com/muzlik/smpstart/effects/EffectSystemTest.class
+com/muzlik/smpstart/border/BorderManagerTest$1.class
+com/muzlik/smpstart/effects/EffectSystemTest$1.class
+com/muzlik/smpstart/border/BorderManagerTest$2.class
+com/muzlik/smpstart/commands/CommandManagerTest.class
+com/muzlik/smpstart/state/StateManagerTest.class
+com/muzlik/smpstart/commands/CommandManagerTest$1.class
+com/muzlik/smpstart/config/ConfigManagerTest$1.class
+com/muzlik/smpstart/SMPStartPluginTest.class
+com/muzlik/smpstart/utils/ErrorHandlerTest.class
+com/muzlik/smpstart/border/BorderManagerTest.class
+com/muzlik/smpstart/reminders/ReminderSystemTest.class

@@ -15,7 +15,7 @@ A coordinated launch system for Minecraft SMP servers with balanced early-game d
 - **Mob Safety**: Optional pre-start mob spawning and damage disable
 - **Border Controls**: Transition timing and damage settings per phase
 - **Minimum Player Gate**: Require a minimum number of players to start
-- **Cooldown System**: Prevents spam usage of the start command
+- **Cooldown System**: Prevents spam usage of the start command.
 
 ## Commands
 
