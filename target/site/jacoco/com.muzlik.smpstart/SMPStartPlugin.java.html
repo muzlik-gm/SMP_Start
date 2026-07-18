@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SMPStartPlugin.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart</a> &gt; <span class="el_source">SMPStartPlugin.java</span></div><h1>SMPStartPlugin.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart;
+
+import com.muzlik.smpstart.config.ConfigManager;
+import com.muzlik.smpstart.config.ConfigManagerImpl;
+import com.muzlik.smpstart.data.StateData;
+import com.muzlik.smpstart.effects.EffectSystem;
+import com.muzlik.smpstart.effects.EffectSystemImpl;
+import com.muzlik.smpstart.reminders.ReminderSystem;
+import com.muzlik.smpstart.reminders.ReminderSystemImpl;
+import com.muzlik.smpstart.state.StateManager;
+import com.muzlik.smpstart.state.StateManagerImpl;
+import com.muzlik.smpstart.state.StateManager.PluginState;
+import com.muzlik.smpstart.border.BorderManager;
+import com.muzlik.smpstart.border.BorderManagerImpl;
+import com.muzlik.smpstart.commands.CommandManager;
+import com.muzlik.smpstart.commands.CommandManagerImpl;
+import com.muzlik.smpstart.pvp.PvPManager;
+import com.muzlik.smpstart.pvp.PvPManagerImpl;
+import com.muzlik.smpstart.persistence.DataManager;
+import com.muzlik.smpstart.persistence.DataManagerImpl;
+import com.muzlik.smpstart.menu.ConfigMenuManager;
+import com.muzlik.smpstart.protection.BlockProtectionManager;
+import com.muzlik.smpstart.protection.BlockProtectionManagerImpl;
+import com.muzlik.smpstart.utils.ErrorHandler;
+import org.bukkit.plugin.java.JavaPlugin;
+
+/**
+ * Main plugin class for Muzlik's SMP Starter.
+ * Provides a coordinated launch system for Minecraft SMP servers.
+ */
+<span class="nc" id="L31">public class SMPStartPlugin extends JavaPlugin {</span>
+    
+    private StateManager stateManager;
+    private ConfigManager configManager;
+    private EffectSystem effectSystem;
+    private ReminderSystem reminderSystem;
+    private BorderManager borderManager;
+    private CommandManager commandManager;
+    private PvPManager pvpManager;
+    private DataManager dataManager;
+    private BlockProtectionManager blockProtectionManager;
+    private ConfigMenuManager configMenuManager;
+    private ErrorHandler errorHandler;
+    
+    @Override
+    public void onEnable() {
+<span class="nc" id="L47">        getLogger().info(&quot;Muzlik's SMP Starter is enabling...&quot;);</span>
+        
+        try {
+            // Initialize error handler first
+<span class="nc" id="L51">            errorHandler = new ErrorHandler(this);</span>
+<span class="nc" id="L52">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing Muzlik's SMP Starter...&quot;);</span>
+            
+            // Initialize managers in dependency order
+<span class="nc" id="L55">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing configuration manager...&quot;);</span>
+<span class="nc" id="L56">            configManager = new ConfigManagerImpl(this);</span>
+            
+<span class="nc" id="L58">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing state manager...&quot;);</span>
+<span class="nc" id="L59">            stateManager = new StateManagerImpl(this);</span>
+            
+<span class="nc" id="L61">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing border manager...&quot;);</span>
+<span class="nc" id="L62">            borderManager = new BorderManagerImpl(this);</span>
+            
+<span class="nc" id="L64">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing effect system...&quot;);</span>
+<span class="nc" id="L65">            effectSystem = new EffectSystemImpl(this);</span>
+            
+<span class="nc" id="L67">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing reminder system...&quot;);</span>
+<span class="nc" id="L68">            reminderSystem = new ReminderSystemImpl(this);</span>
+            
+<span class="nc" id="L70">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing command manager...&quot;);</span>
+<span class="nc" id="L71">            commandManager = new CommandManagerImpl(this);</span>
+            
+<span class="nc" id="L73">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing PvP manager...&quot;);</span>
+<span class="nc" id="L74">            pvpManager = new PvPManagerImpl(this);</span>
+            
+<span class="nc" id="L76">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing data manager...&quot;);</span>
+<span class="nc" id="L77">            dataManager = new DataManagerImpl(this);</span>
+            
+<span class="nc" id="L79">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing block protection manager...&quot;);</span>
+<span class="nc" id="L80">            blockProtectionManager = new BlockProtectionManagerImpl(this);</span>
+            
+<span class="nc" id="L82">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Initializing config menu manager...&quot;);</span>
+<span class="nc" id="L83">            configMenuManager = new ConfigMenuManager(this);</span>
+            
+            // Register commands
+<span class="nc" id="L86">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Registering commands...&quot;);</span>
+<span class="nc" id="L87">            commandManager.registerCommands();</span>
+            
+            // Validate all systems are initialized
+<span class="nc" id="L90">            errorHandler.requireNonNull(configManager, &quot;ConfigManager&quot;);</span>
+<span class="nc" id="L91">            errorHandler.requireNonNull(stateManager, &quot;StateManager&quot;);</span>
+<span class="nc" id="L92">            errorHandler.requireNonNull(borderManager, &quot;BorderManager&quot;);</span>
+<span class="nc" id="L93">            errorHandler.requireNonNull(effectSystem, &quot;EffectSystem&quot;);</span>
+<span class="nc" id="L94">            errorHandler.requireNonNull(reminderSystem, &quot;ReminderSystem&quot;);</span>
+<span class="nc" id="L95">            errorHandler.requireNonNull(commandManager, &quot;CommandManager&quot;);</span>
+<span class="nc" id="L96">            errorHandler.requireNonNull(pvpManager, &quot;PvPManager&quot;);</span>
+<span class="nc" id="L97">            errorHandler.requireNonNull(dataManager, &quot;DataManager&quot;);</span>
+<span class="nc" id="L98">            errorHandler.requireNonNull(blockProtectionManager, &quot;BlockProtectionManager&quot;);</span>
+<span class="nc" id="L99">            errorHandler.requireNonNull(configMenuManager, &quot;ConfigMenuManager&quot;);</span>
+            
+            // Load saved state if exists
+<span class="nc" id="L102">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Loading saved state...&quot;);</span>
+<span class="nc" id="L103">            loadSavedState();</span>
+            
+            // Resume countdown/cooldown timers if needed
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            if (stateManager instanceof StateManagerImpl) {</span>
+<span class="nc" id="L107">                ((StateManagerImpl) stateManager).resumeStateAfterLoad();</span>
+            }
+            
+            // Initialize world border to pre-start size on plugin startup
+<span class="nc" id="L111">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Setting initial world border...&quot;);</span>
+<span class="nc" id="L112">            initializeWorldBorder();</span>
+            
+            // Start join reminders if appropriate (SMP not started and idle)
+<span class="nc" id="L115">            startJoinRemindersIfNeeded();</span>
+            
+<span class="nc" id="L117">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Muzlik's SMP Starter enabled successfully!&quot;);</span>
+<span class="nc" id="L118">            errorHandler.logInfo(&quot;Startup&quot;, &quot;Plugin ready. Use /smp start to begin the countdown.&quot;);</span>
+            
+<span class="nc" id="L120">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            if (errorHandler != null) {</span>
+<span class="nc" id="L122">                errorHandler.handleException(&quot;Plugin Startup&quot;, e);</span>
+            } else {
+<span class="nc" id="L124">                getLogger().severe(&quot;Failed to enable Muzlik's SMP Starter: &quot; + e.getMessage());</span>
+<span class="nc" id="L125">                e.printStackTrace();</span>
+            }
+            // Disable the plugin if initialization fails
+<span class="nc" id="L128">            getServer().getPluginManager().disablePlugin(this);</span>
+<span class="nc" id="L129">        }</span>
+<span class="nc" id="L130">    }</span>
+    
+    @Override
+    public void onDisable() {
+<span class="nc" id="L134">        getLogger().info(&quot;Muzlik's SMP Starter is disabling...&quot;);</span>
+        
+        try {
+            // Cleanup resources in reverse order
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (errorHandler != null) {</span>
+<span class="nc" id="L139">                errorHandler.logInfo(&quot;Shutdown&quot;, &quot;Cleaning up managers...&quot;);</span>
+            }
+            
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (stateManager instanceof StateManagerImpl) {</span>
+<span class="nc" id="L143">                ((StateManagerImpl) stateManager).cleanup();</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                if (errorHandler != null) {</span>
+<span class="nc" id="L145">                    errorHandler.logInfo(&quot;Shutdown&quot;, &quot;State manager cleaned up&quot;);</span>
+                }
+            }
+            
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            if (reminderSystem instanceof ReminderSystemImpl) {</span>
+<span class="nc" id="L150">                ((ReminderSystemImpl) reminderSystem).cleanup();</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                if (errorHandler != null) {</span>
+<span class="nc" id="L152">                    errorHandler.logInfo(&quot;Shutdown&quot;, &quot;Reminder system cleaned up&quot;);</span>
+                }
+            }
+            
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            if (pvpManager instanceof PvPManagerImpl) {</span>
+<span class="nc" id="L157">                ((PvPManagerImpl) pvpManager).cleanup();</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                if (errorHandler != null) {</span>
+<span class="nc" id="L159">                    errorHandler.logInfo(&quot;Shutdown&quot;, &quot;PvP manager cleaned up&quot;);</span>
+                }
+            }
+            
+            // Save current state before shutdown
+<span class="nc bnc" id="L164" title="All 4 branches missed.">            if (dataManager != null &amp;&amp; stateManager != null) {</span>
+<span class="nc" id="L165">                dataManager.saveState(((StateManagerImpl) stateManager).getStateData());</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                if (errorHandler != null) {</span>
+<span class="nc" id="L167">                    errorHandler.logInfo(&quot;Shutdown&quot;, &quot;Plugin state saved&quot;);</span>
+                }
+            }
+            
+            // Save configuration before shutdown
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            if (configManager != null) {</span>
+<span class="nc" id="L173">                configManager.saveConfig();</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                if (errorHandler != null) {</span>
+<span class="nc" id="L175">                    errorHandler.logInfo(&quot;Shutdown&quot;, &quot;Configuration saved&quot;);</span>
+                }
+            }
+            
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            if (errorHandler != null) {</span>
+<span class="nc" id="L180">                errorHandler.logInfo(&quot;Shutdown&quot;, &quot;Muzlik's SMP Starter disabled successfully!&quot;);</span>
+            } else {
+<span class="nc" id="L182">                getLogger().info(&quot;Muzlik's SMP Starter disabled successfully!&quot;);</span>
+            }
+            
+<span class="nc" id="L185">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            if (errorHandler != null) {</span>
+<span class="nc" id="L187">                errorHandler.handleException(&quot;Plugin Shutdown&quot;, e);</span>
+            } else {
+<span class="nc" id="L189">                getLogger().warning(&quot;Error during plugin shutdown: &quot; + e.getMessage());</span>
+<span class="nc" id="L190">                e.printStackTrace();</span>
+            }
+<span class="nc" id="L192">        }</span>
+<span class="nc" id="L193">    }</span>
+    
+    // Getters for managers (will be used by other components)
+    public StateManager getStateManager() {
+<span class="nc" id="L197">        return stateManager;</span>
+    }
+    
+    public ConfigManager getConfigManager() {
+<span class="nc" id="L201">        return configManager;</span>
+    }
+    
+    public EffectSystem getEffectSystem() {
+<span class="nc" id="L205">        return effectSystem;</span>
+    }
+    
+    public ReminderSystem getReminderSystem() {
+<span class="nc" id="L209">        return reminderSystem;</span>
+    }
+    
+    public BorderManager getBorderManager() {
+<span class="nc" id="L213">        return borderManager;</span>
+    }
+    
+    public CommandManager getCommandManager() {
+<span class="nc" id="L217">        return commandManager;</span>
+    }
+    
+    public PvPManager getPvPManager() {
+<span class="nc" id="L221">        return pvpManager;</span>
+    }
+    
+    public DataManager getDataManager() {
+<span class="nc" id="L225">        return dataManager;</span>
+    }
+    
+    public BlockProtectionManager getBlockProtectionManager() {
+<span class="nc" id="L229">        return blockProtectionManager;</span>
+    }
+    
+    public ConfigMenuManager getConfigMenuManager() {
+<span class="nc" id="L233">        return configMenuManager;</span>
+    }
+    
+    /**
+     * Check if all systems are properly initialized
+     * @return true if all systems are ready, false otherwise
+     */
+    public boolean areSystemsReady() {
+<span class="nc bnc" id="L241" title="All 18 branches missed.">        return configManager != null &amp;&amp; stateManager != null &amp;&amp; borderManager != null &amp;&amp; </span>
+               effectSystem != null &amp;&amp; reminderSystem != null &amp;&amp; commandManager != null &amp;&amp;
+               pvpManager != null &amp;&amp; dataManager != null &amp;&amp; blockProtectionManager != null;
+    }
+    
+    /**
+     * Get plugin version information
+     * @return version string
+     */
+    public String getPluginVersion() {
+<span class="nc" id="L251">        return getDescription().getVersion();</span>
+    }
+    
+    /**
+     * Get plugin author information
+     * @return author string
+     */
+    public String getPluginAuthor() {
+<span class="nc" id="L259">        return &quot;muzlik&quot;;</span>
+    }
+    
+    /**
+     * Get the error handler for centralized error management
+     * @return the error handler instance
+     */
+    public ErrorHandler getErrorHandler() {
+<span class="nc" id="L267">        return errorHandler;</span>
+    }
+    
+    /**
+     * Initialize the world border based on current SMP state
+     * Sets pre-start size if SMP hasn't started, or final size if it has
+     */
+    private void initializeWorldBorder() {
+        // Delay border initialization to ensure worlds are loaded and state is loaded
+<span class="nc" id="L276">        getServer().getScheduler().runTaskLater(this, () -&gt; {</span>
+            try {
+                // Check if SMP has already started
+<span class="nc bnc" id="L279" title="All 2 branches missed.">                if (stateManager instanceof StateManagerImpl) {</span>
+<span class="nc" id="L280">                    StateData stateData = ((StateManagerImpl) stateManager).getStateData();</span>
+                    
+<span class="nc bnc" id="L282" title="All 2 branches missed.">                    if (stateData.isSmpStarted()) {</span>
+                        // SMP has started - set final border size
+<span class="nc" id="L284">                        borderManager.setFinalBorder();</span>
+<span class="nc" id="L285">                        double finalSize = configManager.getFinalBorderSize();</span>
+<span class="nc" id="L286">                        errorHandler.logInfo(&quot;Startup&quot;, &quot;SMP already started - world border set to final size: &quot; + finalSize + &quot; blocks&quot;);</span>
+<span class="nc" id="L287">                    } else {</span>
+                        // SMP hasn't started - set pre-start border size
+<span class="nc" id="L289">                        borderManager.initializeBorder();</span>
+<span class="nc" id="L290">                        double preStartSize = configManager.getPreStartBorderSize();</span>
+<span class="nc" id="L291">                        errorHandler.logInfo(&quot;Startup&quot;, &quot;SMP not started - world border set to pre-start size: &quot; + preStartSize + &quot; blocks&quot;);</span>
+                    }
+<span class="nc" id="L293">                } else {</span>
+                    // Fallback - use pre-start border
+<span class="nc" id="L295">                    borderManager.initializeBorder();</span>
+<span class="nc" id="L296">                    double borderSize = configManager.getPreStartBorderSize();</span>
+<span class="nc" id="L297">                    errorHandler.logInfo(&quot;Startup&quot;, &quot;World border initialized to pre-start size: &quot; + borderSize + &quot; blocks&quot;);</span>
+                }
+<span class="nc" id="L299">            } catch (Exception e) {</span>
+<span class="nc" id="L300">                errorHandler.handleException(&quot;Border Initialization&quot;, e);</span>
+<span class="nc" id="L301">            }</span>
+<span class="nc" id="L302">        }, 40L); // Wait 2 seconds (40 ticks) to ensure state is loaded first</span>
+<span class="nc" id="L303">    }</span>
+    
+    /**
+     * Load saved state from file if it exists
+     */
+    private void loadSavedState() {
+        try {
+<span class="nc bnc" id="L310" title="All 2 branches missed.">            if (dataManager.hasSavedState()) {</span>
+<span class="nc" id="L311">                errorHandler.logInfo(&quot;Startup&quot;, &quot;Found saved state file, attempting to restore...&quot;);</span>
+<span class="nc" id="L312">                StateData savedState = dataManager.loadState();</span>
+<span class="nc bnc" id="L313" title="All 4 branches missed.">                if (savedState != null &amp;&amp; stateManager instanceof StateManagerImpl) {</span>
+<span class="nc" id="L314">                    ((StateManagerImpl) stateManager).loadStateData(savedState);</span>
+<span class="nc" id="L315">                    errorHandler.logInfo(&quot;Startup&quot;, &quot;State restored successfully&quot;);</span>
+                }
+<span class="nc" id="L317">            } else {</span>
+<span class="nc" id="L318">                errorHandler.logInfo(&quot;Startup&quot;, &quot;No saved state found, starting fresh&quot;);</span>
+            }
+<span class="nc" id="L320">        } catch (Exception e) {</span>
+<span class="nc" id="L321">            errorHandler.handleException(&quot;State Loading&quot;, e);</span>
+<span class="nc" id="L322">        }</span>
+<span class="nc" id="L323">    }</span>
+    
+    /**
+     * Start join reminders only when SMP hasn't started and the plugin is idle
+     */
+    private void startJoinRemindersIfNeeded() {
+<span class="nc bnc" id="L329" title="All 6 branches missed.">        if (reminderSystem == null || configManager == null || stateManager == null) {</span>
+<span class="nc" id="L330">            return;</span>
+        }
+        
+<span class="nc bnc" id="L333" title="All 2 branches missed.">        if (!configManager.areJoinRemindersEnabled()) {</span>
+<span class="nc" id="L334">            return;</span>
+        }
+        
+<span class="nc bnc" id="L337" title="All 2 branches missed.">        if (!(stateManager instanceof StateManagerImpl)) {</span>
+<span class="nc" id="L338">            return;</span>
+        }
+        
+<span class="nc" id="L341">        StateData stateData = ((StateManagerImpl) stateManager).getStateData();</span>
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        if (stateData.isSmpStarted()) {</span>
+<span class="nc" id="L343">            return;</span>
+        }
+        
+<span class="nc bnc" id="L346" title="All 2 branches missed.">        if (stateManager.getCurrentState() != PluginState.IDLE) {</span>
+<span class="nc" id="L347">            return;</span>
+        }
+        
+<span class="nc" id="L350">        reminderSystem.startReminders();</span>
+<span class="nc" id="L351">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

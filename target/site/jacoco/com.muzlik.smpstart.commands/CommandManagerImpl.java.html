@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommandManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.commands</a> &gt; <span class="el_source">CommandManagerImpl.java</span></div><h1>CommandManagerImpl.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.commands;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import com.muzlik.smpstart.commands.subcommands.*;
+import com.muzlik.smpstart.utils.MessageUtils;
+import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Root handler for the /smp command.
+ * Dispatches to registered {@link SubCommand} instances.
+ */
+public class CommandManagerImpl implements CommandManager {
+
+    private final SMPStartPlugin plugin;
+<span class="nc" id="L21">    private final Map&lt;String, SubCommand&gt; subCommands = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L22">    private final Map&lt;String, String&gt; aliases = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L24">    public CommandManagerImpl(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L25">        this.plugin = plugin;</span>
+<span class="nc" id="L26">    }</span>
+
+    @Override
+    public void registerCommands() {
+        // Register all subcommands
+<span class="nc" id="L31">        register(new StartSubCommand(plugin));</span>
+<span class="nc" id="L32">        register(new CancelSubCommand(plugin));</span>
+<span class="nc" id="L33">        register(new ResetSubCommand(plugin));</span>
+<span class="nc" id="L34">        register(new ReloadSubCommand(plugin));</span>
+<span class="nc" id="L35">        register(new StatusSubCommand(plugin));</span>
+<span class="nc" id="L36">        register(new ConfigSubCommand(plugin));</span>
+<span class="nc" id="L37">        register(new MenuSubCommand(plugin));</span>
+
+        // Bind the single /smp root command
+<span class="nc" id="L40">        PluginCommand smp = plugin.getCommand(&quot;smp&quot;);</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (smp != null) {</span>
+<span class="nc" id="L42">            smp.setExecutor(this);</span>
+<span class="nc" id="L43">            smp.setTabCompleter(this);</span>
+        } else {
+<span class="nc" id="L45">            plugin.getLogger().severe(&quot;Command 'smp' not found in plugin.yml!&quot;);</span>
+        }
+
+<span class="nc" id="L48">        plugin.getLogger().info(&quot;Registered /smp with &quot; + subCommands.size() + &quot; subcommands and &quot; + aliases.size() + &quot; aliases.&quot;);</span>
+<span class="nc" id="L49">    }</span>
+
+    private void register(SubCommand sub) {
+<span class="nc" id="L52">        String name = sub.getName().toLowerCase();</span>
+<span class="nc" id="L53">        subCommands.put(name, sub);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        for (String alias : sub.getAliases()) {</span>
+<span class="nc" id="L55">            aliases.put(alias.toLowerCase(), name);</span>
+<span class="nc" id="L56">        }</span>
+<span class="nc" id="L57">    }</span>
+
+    // -------------------------------------------------------------------------
+    // CommandExecutor
+    // -------------------------------------------------------------------------
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (args.length == 0) {</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            if (sender instanceof org.bukkit.entity.Player player) {</span>
+<span class="nc" id="L67">                plugin.getConfigMenuManager().openMainMenu(player);</span>
+            } else {
+<span class="nc" id="L69">                showHelp(sender);</span>
+            }
+<span class="nc" id="L71">            return true;</span>
+        }
+
+<span class="nc" id="L74">        String input = args[0].toLowerCase();</span>
+<span class="nc" id="L75">        String subName = aliases.getOrDefault(input, input);</span>
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (subName.equals(&quot;help&quot;)) {</span>
+<span class="nc" id="L78">            showHelp(sender);</span>
+<span class="nc" id="L79">            return true;</span>
+        }
+
+<span class="nc" id="L82">        SubCommand sub = subCommands.get(subName);</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (sub == null) {</span>
+<span class="nc" id="L84">            MessageUtils.sendError(sender, &quot;Unknown subcommand: &amp;f&quot; + input + &quot;&amp;7. Run &amp;f/smp help &amp;7for a list.&quot;);</span>
+<span class="nc" id="L85">            return true;</span>
+        }
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (!sender.hasPermission(sub.getPermission())) {</span>
+<span class="nc" id="L89">            MessageUtils.sendError(sender, &quot;You don't have permission to do that.&quot;);</span>
+<span class="nc" id="L90">            return true;</span>
+        }
+
+        // Pass remaining args (everything after the subcommand name)
+<span class="nc" id="L94">        String[] subArgs = Arrays.copyOfRange(args, 1, args.length);</span>
+        try {
+<span class="nc" id="L96">            return sub.execute(sender, subArgs);</span>
+<span class="nc" id="L97">        } catch (Exception e) {</span>
+<span class="nc" id="L98">            MessageUtils.sendError(sender, &quot;An error occurred while executing that command.&quot;);</span>
+<span class="nc" id="L99">            plugin.getErrorHandler().handleException(&quot;Command: &quot; + subName, e);</span>
+<span class="nc" id="L100">            return true;</span>
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // TabCompleter
+    // -------------------------------------------------------------------------
+
+    @Override
+    public List&lt;String&gt; onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (args.length == 1) {</span>
+<span class="nc" id="L111">            List&lt;String&gt; names = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L112">            names.add(&quot;help&quot;);</span>
+<span class="nc" id="L113">            subCommands.forEach((name, sub) -&gt; {</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                if (sender.hasPermission(sub.getPermission())) {</span>
+<span class="nc" id="L115">                    names.add(name);</span>
+<span class="nc" id="L116">                    names.addAll(sub.getAliases());</span>
+                }
+<span class="nc" id="L118">            });</span>
+<span class="nc" id="L119">            return names.stream()</span>
+<span class="nc" id="L120">                    .filter(n -&gt; n.startsWith(args[0].toLowerCase()))</span>
+<span class="nc" id="L121">                    .sorted()</span>
+<span class="nc" id="L122">                    .collect(Collectors.toList());</span>
+        }
+
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (args.length &gt;= 2) {</span>
+<span class="nc" id="L126">            String input = args[0].toLowerCase();</span>
+<span class="nc" id="L127">            String subName = aliases.getOrDefault(input, input);</span>
+<span class="nc" id="L128">            SubCommand sub = subCommands.get(subName);</span>
+<span class="nc bnc" id="L129" title="All 4 branches missed.">            if (sub != null &amp;&amp; sender.hasPermission(sub.getPermission())) {</span>
+<span class="nc" id="L130">                return sub.tabComplete(sender, Arrays.copyOfRange(args, 1, args.length));</span>
+            }
+        }
+
+<span class="nc" id="L134">        return Collections.emptyList();</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // Help
+    // -------------------------------------------------------------------------
+
+    @Override
+    public void showHelp(CommandSender sender) {
+<span class="nc" id="L143">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc" id="L144">        MessageUtils.sendRawMessage(sender, &quot;&amp;#00FBFF&amp;lMUZLIK'S SMP STARTER &amp;7- &amp;fCommands&quot;);</span>
+<span class="nc" id="L145">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc" id="L146">        subCommands.forEach((name, sub) -&gt; {</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            if (sender.hasPermission(sub.getPermission())) {</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                String aliasesStr = sub.getAliases().isEmpty() ? &quot;&quot; : &quot; &amp;7(&quot; + String.join(&quot;, &quot;, sub.getAliases()) + &quot;)&quot;;</span>
+<span class="nc" id="L149">                MessageUtils.sendRawMessage(sender, &quot; &amp;#00FBFF» &amp;b/smp &quot; + sub.getUsage() + aliasesStr);</span>
+<span class="nc" id="L150">                MessageUtils.sendRawMessage(sender, &quot;   &amp;8└ &amp;f&quot; + sub.getDescription());</span>
+            }
+<span class="nc" id="L152">        });</span>
+<span class="nc" id="L153">        MessageUtils.sendRawMessage(sender, &quot; &amp;#00FBFF» &amp;b/smp help&quot;);</span>
+<span class="nc" id="L154">        MessageUtils.sendRawMessage(sender, &quot;   &amp;8└ &amp;fShow this help menu.&quot;);</span>
+<span class="nc" id="L155">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc" id="L156">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

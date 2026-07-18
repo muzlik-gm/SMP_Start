@@ -1,0 +1,14 @@
+com.muzlik.smpstart
+com.muzlik.smpstart.border
+com.muzlik.smpstart.commands
+com.muzlik.smpstart.commands.subcommands
+com.muzlik.smpstart.config
+com.muzlik.smpstart.data
+com.muzlik.smpstart.effects
+com.muzlik.smpstart.menu
+com.muzlik.smpstart.persistence
+com.muzlik.smpstart.protection
+com.muzlik.smpstart.pvp
+com.muzlik.smpstart.reminders
+com.muzlik.smpstart.state
+com.muzlik.smpstart.utils

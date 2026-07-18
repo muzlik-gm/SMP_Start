@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigSubCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.commands.subcommands</a> &gt; <span class="el_source">ConfigSubCommand.java</span></div><h1>ConfigSubCommand.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.commands.subcommands;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import com.muzlik.smpstart.commands.SubCommand;
+import com.muzlik.smpstart.state.StateManagerImpl;
+import com.muzlik.smpstart.utils.MessageUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.command.CommandSender;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * /smp config [key] [value] — view or change settings via command line.
+ */
+public class ConfigSubCommand implements SubCommand {
+
+    private final SMPStartPlugin plugin;
+
+<span class="nc" id="L21">    private static final List&lt;String&gt; KEYS = Arrays.asList(</span>
+            &quot;countdown&quot;, &quot;cooldown&quot;, &quot;preborder&quot;, &quot;finalborder&quot;,
+            &quot;pvp&quot;, &quot;minplayers&quot;, &quot;reminders&quot;, &quot;reminderinterval&quot;,
+            &quot;bossbar&quot;, &quot;bordercenter&quot;, &quot;bordercenterpos&quot;, &quot;world&quot;
+    );
+
+<span class="nc" id="L27">    public ConfigSubCommand(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L28">        this.plugin = plugin;</span>
+<span class="nc" id="L29">    }</span>
+
+<span class="nc" id="L31">    @Override public String getName()        { return &quot;config&quot;; }</span>
+<span class="nc" id="L32">    @Override public List&lt;String&gt; getAliases() { return List.of(&quot;c&quot;, &quot;settings&quot;); }</span>
+<span class="nc" id="L33">    @Override public String getPermission()  { return &quot;smpstart.config&quot;; }</span>
+<span class="nc" id="L34">    @Override public String getUsage()       { return &quot;config [setting] [value]&quot;; }</span>
+<span class="nc" id="L35">    @Override public String getDescription() { return &quot;View or change plugin settings.&quot;; }</span>
+
+    @Override
+    public boolean execute(CommandSender sender, String[] args) {
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (args.length == 0) {</span>
+<span class="nc" id="L40">            showConfigHelp(sender);</span>
+<span class="nc" id="L41">            return true;</span>
+        }
+
+<span class="nc" id="L44">        String key = args[0].toLowerCase();</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (args.length == 1) {</span>
+<span class="nc" id="L47">            showCurrentValue(sender, key);</span>
+<span class="nc" id="L48">            return true;</span>
+        }
+
+<span class="nc bnc" id="L51" title="All 13 branches missed.">        switch (key) {</span>
+            case &quot;countdown&quot;:
+<span class="nc" id="L53">                setInt(sender, args, 1, 3600, v -&gt; {</span>
+<span class="nc" id="L54">                    plugin.getConfigManager().setCountdownDuration(v);</span>
+<span class="nc" id="L55">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L56">                    MessageUtils.sendSuccess(sender, &quot;Countdown duration set to &amp;f&quot; + v + &quot;s&amp;7.&quot;);</span>
+<span class="nc" id="L57">                });</span>
+<span class="nc" id="L58">                break;</span>
+
+            case &quot;cooldown&quot;:
+<span class="nc" id="L61">                setInt(sender, args, 0, 86400, v -&gt; {</span>
+<span class="nc" id="L62">                    plugin.getConfigManager().setCooldownDuration(v);</span>
+<span class="nc" id="L63">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L64">                    MessageUtils.sendSuccess(sender, &quot;Cooldown duration set to &amp;f&quot; + v + &quot;s&amp;7.&quot;);</span>
+<span class="nc" id="L65">                });</span>
+<span class="nc" id="L66">                break;</span>
+
+            case &quot;preborder&quot;:
+<span class="nc" id="L69">                setDouble(sender, args, 1.0, 1000000.0, v -&gt; {</span>
+<span class="nc" id="L70">                    plugin.getConfigManager().setPreStartBorderSize(v);</span>
+<span class="nc" id="L71">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L72">                    applyBorderUpdate();</span>
+<span class="nc" id="L73">                    MessageUtils.sendSuccess(sender, &quot;Pre-start border size set to &amp;f&quot; + v + &quot; blocks&amp;7.&quot;);</span>
+<span class="nc" id="L74">                });</span>
+<span class="nc" id="L75">                break;</span>
+
+            case &quot;finalborder&quot;:
+<span class="nc" id="L78">                setDouble(sender, args, 1.0, 1000000.0, v -&gt; {</span>
+<span class="nc" id="L79">                    plugin.getConfigManager().setFinalBorderSize(v);</span>
+<span class="nc" id="L80">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L81">                    applyBorderUpdate();</span>
+<span class="nc" id="L82">                    MessageUtils.sendSuccess(sender, &quot;Final border size set to &amp;f&quot; + v + &quot; blocks&amp;7.&quot;);</span>
+<span class="nc" id="L83">                });</span>
+<span class="nc" id="L84">                break;</span>
+
+            case &quot;pvp&quot;:
+<span class="nc" id="L87">                setInt(sender, args, 0, 10000, v -&gt; {</span>
+<span class="nc" id="L88">                    plugin.getConfigManager().setPvpProtectionDuration(v);</span>
+<span class="nc" id="L89">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L90">                    MessageUtils.sendSuccess(sender, &quot;PvP protection set to &amp;f&quot; + v + &quot; min&amp;7.&quot;);</span>
+<span class="nc" id="L91">                });</span>
+<span class="nc" id="L92">                break;</span>
+
+            case &quot;minplayers&quot;:
+<span class="nc" id="L95">                setInt(sender, args, 0, 1000, v -&gt; {</span>
+<span class="nc" id="L96">                    plugin.getConfigManager().setMinOnlinePlayers(v);</span>
+<span class="nc" id="L97">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L98">                    MessageUtils.sendSuccess(sender, &quot;Minimum players set to &amp;f&quot; + v + &quot;&amp;7.&quot;);</span>
+<span class="nc" id="L99">                });</span>
+<span class="nc" id="L100">                break;</span>
+
+            case &quot;reminders&quot;:
+<span class="nc" id="L103">                setBool(sender, args, v -&gt; {</span>
+<span class="nc" id="L104">                    plugin.getConfigManager().setJoinRemindersEnabled(v);</span>
+<span class="nc" id="L105">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                    MessageUtils.sendSuccess(sender, &quot;Join reminders &quot; + (v ? &quot;&amp;aenabled&quot; : &quot;&amp;cdisabled&quot;) + &quot;&amp;7.&quot;);</span>
+<span class="nc" id="L107">                });</span>
+<span class="nc" id="L108">                break;</span>
+
+            case &quot;reminderinterval&quot;:
+<span class="nc" id="L111">                setInt(sender, args, 1, 3600, v -&gt; {</span>
+<span class="nc" id="L112">                    plugin.getConfigManager().setReminderInterval(v);</span>
+<span class="nc" id="L113">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L114">                    MessageUtils.sendSuccess(sender, &quot;Reminder interval set to &amp;f&quot; + v + &quot;s&amp;7.&quot;);</span>
+<span class="nc" id="L115">                });</span>
+<span class="nc" id="L116">                break;</span>
+
+            case &quot;bossbar&quot;:
+<span class="nc" id="L119">                setBool(sender, args, v -&gt; {</span>
+<span class="nc" id="L120">                    plugin.getConfigManager().setCountdownBossBarEnabled(v);</span>
+<span class="nc" id="L121">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                    MessageUtils.sendSuccess(sender, &quot;Countdown boss bar &quot; + (v ? &quot;&amp;aenabled&quot; : &quot;&amp;cdisabled&quot;) + &quot;&amp;7.&quot;);</span>
+<span class="nc" id="L123">                });</span>
+<span class="nc" id="L124">                break;</span>
+
+            case &quot;bordercenter&quot;:
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                if (args.length &lt; 2) { MessageUtils.sendError(sender, &quot;Usage: &amp;f/smp config bordercenter &lt;spawn|fixed&gt;&quot;); return true; }</span>
+<span class="nc" id="L128">                String mode = args[1].toLowerCase();</span>
+<span class="nc bnc" id="L129" title="All 4 branches missed.">                if (!mode.equals(&quot;spawn&quot;) &amp;&amp; !mode.equals(&quot;fixed&quot;)) {</span>
+<span class="nc" id="L130">                    MessageUtils.sendError(sender, &quot;Invalid mode. Use &amp;fspawn &amp;7or &amp;ffixed&amp;7.&quot;);</span>
+<span class="nc" id="L131">                    return true;</span>
+                }
+<span class="nc" id="L133">                plugin.getConfigManager().setBorderCenterMode(mode);</span>
+<span class="nc" id="L134">                plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L135">                applyBorderUpdate();</span>
+<span class="nc" id="L136">                MessageUtils.sendSuccess(sender, &quot;Border center mode set to &amp;f&quot; + mode + &quot;&amp;7.&quot;);</span>
+<span class="nc" id="L137">                break;</span>
+
+            case &quot;bordercenterpos&quot;:
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                if (args.length &lt; 3) { MessageUtils.sendError(sender, &quot;Usage: &amp;f/smp config bordercenterpos &lt;x&gt; &lt;z&gt;&quot;); return true; }</span>
+                try {
+<span class="nc" id="L142">                    double x = Double.parseDouble(args[1]);</span>
+<span class="nc" id="L143">                    double z = Double.parseDouble(args[2]);</span>
+<span class="nc" id="L144">                    plugin.getConfigManager().setBorderCenterPosition(x, z);</span>
+<span class="nc" id="L145">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L146">                    applyBorderUpdate();</span>
+<span class="nc" id="L147">                    MessageUtils.sendSuccess(sender, &quot;Border center set to &amp;fX=&quot; + x + &quot;, Z=&quot; + z + &quot;&amp;7.&quot;);</span>
+<span class="nc" id="L148">                } catch (NumberFormatException e) {</span>
+<span class="nc" id="L149">                    MessageUtils.sendError(sender, &quot;Invalid coordinates.&quot;);</span>
+<span class="nc" id="L150">                }</span>
+<span class="nc" id="L151">                break;</span>
+
+            case &quot;world&quot;:
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                if (args.length &lt; 2) { MessageUtils.sendError(sender, &quot;Usage: &amp;f/smp config world &lt;name|default&gt;&quot;); return true; }</span>
+<span class="nc" id="L155">                String worldArg = args[1];</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                if (worldArg.equalsIgnoreCase(&quot;default&quot;)) {</span>
+<span class="nc" id="L157">                    plugin.getConfigManager().setWorldName(&quot;&quot;);</span>
+<span class="nc" id="L158">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L159">                    applyBorderUpdate();</span>
+<span class="nc" id="L160">                    MessageUtils.sendSuccess(sender, &quot;World set to &amp;fdefault&amp;7.&quot;);</span>
+                } else {
+<span class="nc" id="L162">                    World world = Bukkit.getWorld(worldArg);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                    if (world == null) { MessageUtils.sendError(sender, &quot;World not found: &amp;f&quot; + worldArg); return true; }</span>
+<span class="nc" id="L164">                    plugin.getConfigManager().setWorldName(world.getName());</span>
+<span class="nc" id="L165">                    plugin.getConfigManager().saveConfig();</span>
+<span class="nc" id="L166">                    applyBorderUpdate();</span>
+<span class="nc" id="L167">                    MessageUtils.sendSuccess(sender, &quot;World set to &amp;f&quot; + world.getName() + &quot;&amp;7.&quot;);</span>
+                }
+<span class="nc" id="L169">                break;</span>
+
+            default:
+<span class="nc" id="L172">                MessageUtils.sendError(sender, &quot;Unknown setting: &amp;f&quot; + key + &quot;&amp;7. Run &amp;f/smp config &amp;7for a list.&quot;);</span>
+                break;
+        }
+<span class="nc" id="L175">        return true;</span>
+    }
+
+    @Override
+    public List&lt;String&gt; tabComplete(CommandSender sender, String[] args) {
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (args.length == 1) {</span>
+<span class="nc" id="L181">            return KEYS.stream()</span>
+<span class="nc" id="L182">                    .filter(k -&gt; k.startsWith(args[0].toLowerCase()))</span>
+<span class="nc" id="L183">                    .sorted()</span>
+<span class="nc" id="L184">                    .collect(Collectors.toList());</span>
+        }
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (args.length == 2) {</span>
+<span class="nc bnc" id="L187" title="All 4 branches missed.">            switch (args[0].toLowerCase()) {</span>
+                case &quot;reminders&quot;:
+                case &quot;bossbar&quot;:
+<span class="nc" id="L190">                    return Arrays.asList(&quot;true&quot;, &quot;false&quot;);</span>
+                case &quot;bordercenter&quot;:
+<span class="nc" id="L192">                    return Arrays.asList(&quot;spawn&quot;, &quot;fixed&quot;);</span>
+                case &quot;world&quot;:
+<span class="nc" id="L194">                    List&lt;String&gt; worlds = Bukkit.getWorlds().stream()</span>
+<span class="nc" id="L195">                            .map(World::getName).collect(Collectors.toList());</span>
+<span class="nc" id="L196">                    worlds.add(&quot;default&quot;);</span>
+<span class="nc" id="L197">                    return worlds;</span>
+            }
+        }
+<span class="nc" id="L200">        return Collections.emptyList();</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private void showConfigHelp(CommandSender sender) {
+<span class="nc" id="L208">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc" id="L209">        MessageUtils.sendRawMessage(sender, &quot;&amp;#00FBFF&amp;lCONFIG SETTINGS&quot;);</span>
+<span class="nc" id="L210">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        for (String key : KEYS) {</span>
+<span class="nc" id="L212">             MessageUtils.sendRawMessage(sender, &quot; &amp;#00FBFF» &amp;b&quot; + key);</span>
+<span class="nc" id="L213">        }</span>
+<span class="nc" id="L214">        MessageUtils.sendRawMessage(sender, &quot;&quot;);</span>
+<span class="nc" id="L215">        MessageUtils.sendRawMessage(sender, &quot;&amp;7Use &amp;f/smp config &lt;setting&gt; &lt;value&gt; &amp;7to update.&quot;);</span>
+<span class="nc" id="L216">    }</span>
+
+    private void showCurrentValue(CommandSender sender, String key) {
+        String value;
+<span class="nc bnc" id="L220" title="All 12 branches missed.">        switch (key) {</span>
+<span class="nc" id="L221">            case &quot;countdown&quot;:       value = plugin.getConfigManager().getCountdownDuration() + &quot;s&quot;; break;</span>
+<span class="nc" id="L222">            case &quot;cooldown&quot;:        value = plugin.getConfigManager().getCooldownDuration() + &quot;s&quot;; break;</span>
+<span class="nc" id="L223">            case &quot;preborder&quot;:       value = plugin.getConfigManager().getPreStartBorderSize() + &quot; blocks&quot;; break;</span>
+<span class="nc" id="L224">            case &quot;finalborder&quot;:     value = plugin.getConfigManager().getFinalBorderSize() + &quot; blocks&quot;; break;</span>
+<span class="nc" id="L225">            case &quot;pvp&quot;:             value = plugin.getConfigManager().getPvpProtectionDuration() + &quot; min&quot;; break;</span>
+<span class="nc" id="L226">            case &quot;minplayers&quot;:      value = String.valueOf(plugin.getConfigManager().getMinOnlinePlayers()); break;</span>
+<span class="nc" id="L227">            case &quot;reminders&quot;:       value = String.valueOf(plugin.getConfigManager().areJoinRemindersEnabled()); break;</span>
+<span class="nc" id="L228">            case &quot;reminderinterval&quot;:value = plugin.getConfigManager().getReminderInterval() + &quot;s&quot;; break;</span>
+<span class="nc" id="L229">            case &quot;bossbar&quot;:         value = String.valueOf(plugin.getConfigManager().isCountdownBossBarEnabled()); break;</span>
+<span class="nc" id="L230">            case &quot;bordercenter&quot;:    value = plugin.getConfigManager().getBorderCenterMode(); break;</span>
+            case &quot;world&quot;:
+<span class="nc" id="L232">                String w = plugin.getConfigManager().getWorldName();</span>
+<span class="nc bnc" id="L233" title="All 4 branches missed.">                value = (w == null || w.isBlank()) ? &quot;default&quot; : w;</span>
+<span class="nc" id="L234">                break;</span>
+            default:
+<span class="nc" id="L236">                MessageUtils.sendError(sender, &quot;Unknown setting: &amp;f&quot; + key);</span>
+<span class="nc" id="L237">                return;</span>
+        }
+<span class="nc" id="L239">        MessageUtils.sendInfo(sender, &quot;Current value for &amp;f&quot; + key + &quot;&amp;7: &amp;f&quot; + value);</span>
+<span class="nc" id="L240">    }</span>
+
+    private void setInt(CommandSender sender, String[] args, int min, int max, java.util.function.IntConsumer action) {
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        if (args.length &lt; 2) { MessageUtils.sendError(sender, &quot;A value is required.&quot;); return; }</span>
+        try {
+<span class="nc" id="L245">            int v = Integer.parseInt(args[1]);</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (v &lt; min) { MessageUtils.sendError(sender, &quot;Value must be at least &amp;f&quot; + min + &quot;&amp;7.&quot;); return; }</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">            if (v &gt; max) { MessageUtils.sendError(sender, &quot;Value must be at most &amp;f&quot; + max + &quot;&amp;7.&quot;); return; }</span>
+<span class="nc" id="L248">            action.accept(v);</span>
+<span class="nc" id="L249">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L250">            MessageUtils.sendError(sender, &quot;Invalid number: &amp;f&quot; + args[1]);</span>
+<span class="nc" id="L251">        }</span>
+<span class="nc" id="L252">    }</span>
+
+    private void setDouble(CommandSender sender, String[] args, double min, double max, java.util.function.DoubleConsumer action) {
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (args.length &lt; 2) { MessageUtils.sendError(sender, &quot;A value is required.&quot;); return; }</span>
+        try {
+<span class="nc" id="L257">            double v = Double.parseDouble(args[1]);</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">            if (v &lt; min) { MessageUtils.sendError(sender, &quot;Value must be at least &amp;f&quot; + min + &quot;&amp;7.&quot;); return; }</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            if (v &gt; max) { MessageUtils.sendError(sender, &quot;Value must be at most &amp;f&quot; + max + &quot;&amp;7.&quot;); return; }</span>
+<span class="nc" id="L260">            action.accept(v);</span>
+<span class="nc" id="L261">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L262">            MessageUtils.sendError(sender, &quot;Invalid number: &amp;f&quot; + args[1]);</span>
+<span class="nc" id="L263">        }</span>
+<span class="nc" id="L264">    }</span>
+
+    private void setBool(CommandSender sender, String[] args, java.util.function.Consumer&lt;Boolean&gt; action) {
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (args.length &lt; 2) { MessageUtils.sendError(sender, &quot;Use &amp;ftrue &amp;7or &amp;ffalse&amp;7.&quot;); return; }</span>
+<span class="nc" id="L268">        String val = args[1].toLowerCase();</span>
+<span class="nc bnc" id="L269" title="All 4 branches missed.">        if (!val.equals(&quot;true&quot;) &amp;&amp; !val.equals(&quot;false&quot;)) {</span>
+<span class="nc" id="L270">            MessageUtils.sendError(sender, &quot;Use &amp;ftrue &amp;7or &amp;ffalse&amp;7.&quot;);</span>
+<span class="nc" id="L271">            return;</span>
+        }
+<span class="nc" id="L273">        action.accept(Boolean.parseBoolean(val));</span>
+<span class="nc" id="L274">    }</span>
+
+    private void applyBorderUpdate() {
+<span class="nc bnc" id="L277" title="All 4 branches missed.">        if (plugin.getBorderManager() == null || plugin.getStateManager() == null) return;</span>
+<span class="nc" id="L278">        boolean started = false;</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        if (plugin.getStateManager() instanceof StateManagerImpl) {</span>
+<span class="nc" id="L280">            started = ((StateManagerImpl) plugin.getStateManager()).getStateData().isSmpStarted();</span>
+        }
+<span class="nc bnc" id="L282" title="All 2 branches missed.">        if (started) plugin.getBorderManager().setFinalBorder();</span>
+<span class="nc" id="L283">        else plugin.getBorderManager().setPreStartBorder();</span>
+<span class="nc" id="L284">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

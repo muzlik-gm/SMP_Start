@@ -1,0 +1,49 @@
+name: SMPStart
+version: 1.0.0
+main: com.muzlik.smpstart.SMPStartPlugin
+author: muzlik
+authors: [muzlik]
+description: Muzlik's SMP Starter — balanced early-game SMP launch system
+website: https://github.com/muzlik/smp-start-plugin
+api-version: 1.19
+load: STARTUP
+depend: []
+softdepend: []
+
+commands:
+  smp:
+    description: Muzlik's SMP Starter root command
+    usage: /smp <subcommand>
+    permission: smpstart.use
+    permission-message: "You don't have permission to use Muzlik's SMP Starter."
+    aliases: [smpstart, msmp, sstart]
+
+permissions:
+  smpstart.*:
+    description: Grants access to all SMP Starter commands.
+    default: op
+    children:
+      smpstart.use: true
+      smpstart.config: true
+      smpstart.cancel: true
+      smpstart.reload: true
+      smpstart.reset: true
+      smpstart.admin: true
+  smpstart.use:
+    description: Use /smp start and /smp status.
+    default: op
+  smpstart.cancel:
+    description: Use /smp cancel.
+    default: op
+  smpstart.reset:
+    description: Use /smp reset.
+    default: op
+  smpstart.reload:
+    description: Use /smp reload.
+    default: op
+  smpstart.config:
+    description: Use /smp config.
+    default: op
+  smpstart.admin:
+    description: Access to admin features and detailed error messages.
+    default: op

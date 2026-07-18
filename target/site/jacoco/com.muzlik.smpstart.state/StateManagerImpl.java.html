@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.state</a> &gt; <span class="el_source">StateManagerImpl.java</span></div><h1>StateManagerImpl.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.state;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import com.muzlik.smpstart.data.StateData;
+import org.bukkit.Bukkit;
+import org.bukkit.Difficulty;
+import org.bukkit.GameRule;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
+/**
+ * Implementation of StateManager that handles plugin state and timers
+ */
+public class StateManagerImpl implements StateManager {
+    
+    private final SMPStartPlugin plugin;
+    private final StateData stateData;
+    private BukkitTask countdownTask;
+    private BukkitTask cooldownTask;
+    private int countdownTotalSeconds;
+    
+<span class="nc" id="L25">    public StateManagerImpl(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L26">        this.plugin = plugin;</span>
+<span class="nc" id="L27">        this.stateData = new StateData();</span>
+<span class="nc" id="L28">    }</span>
+    
+    /**
+     * Get the current state data for persistence
+     * @return current state data
+     */
+    public StateData getStateData() {
+<span class="nc" id="L35">        return stateData;</span>
+    }
+    
+    /**
+     * Load state data from persistence
+     * @param loadedStateData the state data to load
+     */
+    public void loadStateData(StateData loadedStateData) {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (loadedStateData != null) {</span>
+<span class="nc" id="L44">            this.stateData.setCurrentState(loadedStateData.getCurrentState());</span>
+<span class="nc" id="L45">            this.stateData.setCountdownStartTime(loadedStateData.getCountdownStartTime());</span>
+<span class="nc" id="L46">            this.stateData.setCooldownStartTime(loadedStateData.getCooldownStartTime());</span>
+<span class="nc" id="L47">            this.stateData.setRemainingCountdown(loadedStateData.getRemainingCountdown());</span>
+<span class="nc" id="L48">            this.stateData.setRemainingCooldown(loadedStateData.getRemainingCooldown());</span>
+<span class="nc" id="L49">            this.stateData.setSmpStartTime(loadedStateData.getSmpStartTime());</span>
+<span class="nc" id="L50">            this.stateData.setPvpProtectionActive(loadedStateData.isPvpProtectionActive());</span>
+<span class="nc" id="L51">            this.stateData.setSmpStarted(loadedStateData.isSmpStarted());</span>
+            
+<span class="nc" id="L53">            plugin.getLogger().info(&quot;Loaded state: &quot; + stateData.getCurrentState() + &quot;, SMP Started: &quot; + stateData.isSmpStarted());</span>
+            
+            // Handle block protection based on SMP started status
+<span class="nc bnc" id="L56" title="All 4 branches missed.">            if (loadedStateData.isSmpStarted() &amp;&amp; plugin.getBlockProtectionManager() != null) {</span>
+<span class="nc" id="L57">                plugin.getBlockProtectionManager().disableBlockProtection();</span>
+            }
+            
+            // Resume PvP protection if it was active
+<span class="nc bnc" id="L61" title="All 4 branches missed.">            if (loadedStateData.isPvpProtectionActive() &amp;&amp; loadedStateData.getSmpStartTime() &gt; 0) {</span>
+<span class="nc" id="L62">                resumePvPProtection(loadedStateData.getSmpStartTime());</span>
+            }
+        }
+<span class="nc" id="L65">    }</span>
+    
+    @Override
+    public void startCountdown() {
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (getCurrentState() != PluginState.IDLE) {</span>
+<span class="nc" id="L70">            return; // Can only start countdown from IDLE state</span>
+        }
+        
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (stateData.isSmpStarted()) {</span>
+<span class="nc" id="L74">            plugin.getLogger().info(&quot;Cannot start countdown - SMP already started&quot;);</span>
+<span class="nc" id="L75">            return;</span>
+        }
+        
+        // Stop reminders once countdown begins
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (plugin.getReminderSystem() != null) {</span>
+<span class="nc" id="L80">            plugin.getReminderSystem().stopReminders();</span>
+        }
+        
+<span class="nc" id="L83">        int duration = plugin.getConfigManager().getCountdownDuration();</span>
+<span class="nc" id="L84">        countdownTotalSeconds = duration;</span>
+<span class="nc" id="L85">        stateData.setCurrentState(PluginState.COUNTDOWN);</span>
+<span class="nc" id="L86">        stateData.setCountdownStartTime(System.currentTimeMillis());</span>
+<span class="nc" id="L87">        stateData.setRemainingCountdown(duration);</span>
+        
+        // Set pre-start border
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (plugin.getBorderManager() != null) {</span>
+<span class="nc" id="L91">            plugin.getBorderManager().setPreStartBorder();</span>
+        }
+        
+        // Start countdown timer
+<span class="nc" id="L95">        scheduleCountdownTask();</span>
+<span class="nc" id="L96">        persistState(&quot;Countdown started&quot;);</span>
+        
+<span class="nc" id="L98">        plugin.getLogger().info(&quot;SMP countdown started for &quot; + duration + &quot; seconds&quot;);</span>
+<span class="nc" id="L99">    }</span>
+    
+    @Override
+    public void handleCountdownTick() {
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (getCurrentState() != PluginState.COUNTDOWN) {</span>
+<span class="nc" id="L104">            return;</span>
+        }
+        
+<span class="nc" id="L107">        int remaining = stateData.getRemainingCountdown();</span>
+        
+        // Play effects for this tick
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (plugin.getEffectSystem() != null) {</span>
+<span class="nc" id="L111">            plugin.getEffectSystem().playCountdownTick(remaining);</span>
+<span class="nc" id="L112">            plugin.getEffectSystem().showCountdownTitle(remaining);</span>
+<span class="nc" id="L113">            plugin.getEffectSystem().broadcastCountdownMessage(remaining);</span>
+<span class="nc" id="L114">            plugin.getEffectSystem().updateCountdownBossBar(remaining, countdownTotalSeconds);</span>
+        }
+        
+        // Decrease remaining time
+<span class="nc" id="L118">        remaining--;</span>
+<span class="nc" id="L119">        stateData.setRemainingCountdown(remaining);</span>
+        
+        // Check if countdown is complete
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (remaining &lt;= 0) {</span>
+<span class="nc" id="L123">            completeCountdown();</span>
+        }
+<span class="nc" id="L125">    }</span>
+    
+    @Override
+    public void completeCountdown() {
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (getCurrentState() != PluginState.COUNTDOWN) {</span>
+<span class="nc" id="L130">            return;</span>
+        }
+        
+        // Cancel countdown timer
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (countdownTask != null) {</span>
+<span class="nc" id="L135">            countdownTask.cancel();</span>
+<span class="nc" id="L136">            countdownTask = null;</span>
+        }
+        
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (plugin.getEffectSystem() != null) {</span>
+<span class="nc" id="L140">            plugin.getEffectSystem().clearCountdownBossBar();</span>
+        }
+        
+        // Transition world border to final size
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        if (plugin.getBorderManager() != null) {</span>
+<span class="nc" id="L145">            plugin.getBorderManager().transitionToFinalBorder();</span>
+        }
+        
+        // Play completion effects
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (plugin.getEffectSystem() != null) {</span>
+<span class="nc" id="L150">            plugin.getEffectSystem().playStartSound();</span>
+<span class="nc" id="L151">            plugin.getEffectSystem().showStartAnimation();</span>
+<span class="nc" id="L152">            plugin.getEffectSystem().broadcastStartMessage();</span>
+        }
+        
+        // Stop join reminders
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (plugin.getReminderSystem() != null) {</span>
+<span class="nc" id="L157">            plugin.getReminderSystem().stopReminders();</span>
+        }
+        
+        // Record SMP start time and mark as started
+<span class="nc" id="L161">        stateData.setSmpStartTime(System.currentTimeMillis());</span>
+<span class="nc" id="L162">        stateData.setSmpStarted(true);</span>
+        
+        // Start PvP protection
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (plugin.getPvPManager() != null) {</span>
+<span class="nc" id="L166">            plugin.getPvPManager().startPvPProtection();</span>
+<span class="nc" id="L167">            stateData.setPvpProtectionActive(true);</span>
+        }
+        
+        // Disable block protection - SMP has officially started
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (plugin.getBlockProtectionManager() != null) {</span>
+<span class="nc" id="L172">            plugin.getBlockProtectionManager().disableBlockProtection();</span>
+        }
+        
+        // Start cooldown
+<span class="nc" id="L176">        startCooldown();</span>
+<span class="nc" id="L177">        persistState(&quot;Countdown completed&quot;);</span>
+<span class="nc" id="L178">        applyPhaseSettings(true);</span>
+        
+<span class="nc" id="L180">        plugin.getLogger().info(&quot;SMP countdown completed! Starting cooldown period.&quot;);</span>
+<span class="nc" id="L181">    }</span>
+    
+    @Override
+    public void startCooldown() {
+<span class="nc" id="L185">        int duration = plugin.getConfigManager().getCooldownDuration();</span>
+<span class="nc" id="L186">        stateData.setCurrentState(PluginState.COOLDOWN);</span>
+<span class="nc" id="L187">        stateData.setCooldownStartTime(System.currentTimeMillis());</span>
+<span class="nc" id="L188">        stateData.setRemainingCooldown(duration);</span>
+        
+        // Start cooldown timer
+<span class="nc" id="L191">        scheduleCooldownTask();</span>
+<span class="nc" id="L192">        persistState(&quot;Cooldown started&quot;);</span>
+<span class="nc" id="L193">    }</span>
+    
+    @Override
+    public boolean cancelCountdown() {
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if (getCurrentState() != PluginState.COUNTDOWN) {</span>
+<span class="nc" id="L198">            return false;</span>
+        }
+        
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (countdownTask != null) {</span>
+<span class="nc" id="L202">            countdownTask.cancel();</span>
+<span class="nc" id="L203">            countdownTask = null;</span>
+        }
+        
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (plugin.getEffectSystem() != null) {</span>
+<span class="nc" id="L207">            plugin.getEffectSystem().clearCountdownBossBar();</span>
+        }
+        
+<span class="nc" id="L210">        stateData.setCurrentState(PluginState.IDLE);</span>
+<span class="nc" id="L211">        stateData.setRemainingCountdown(0);</span>
+<span class="nc" id="L212">        stateData.setCountdownStartTime(0);</span>
+        
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (plugin.getBorderManager() != null) {</span>
+<span class="nc" id="L215">            plugin.getBorderManager().setPreStartBorder();</span>
+        }
+        
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (plugin.getBlockProtectionManager() != null) {</span>
+<span class="nc" id="L219">            plugin.getBlockProtectionManager().enableBlockProtection();</span>
+        }
+        
+<span class="nc bnc" id="L222" title="All 6 branches missed.">        if (!stateData.isSmpStarted() &amp;&amp; plugin.getReminderSystem() != null &amp;&amp; plugin.getConfigManager().areJoinRemindersEnabled()) {</span>
+<span class="nc" id="L223">            plugin.getReminderSystem().startReminders();</span>
+        }
+        
+<span class="nc" id="L226">        persistState(&quot;Countdown cancelled&quot;);</span>
+<span class="nc" id="L227">        plugin.getLogger().info(&quot;SMP countdown cancelled&quot;);</span>
+<span class="nc" id="L228">        return true;</span>
+    }
+    
+    @Override
+    public boolean resetSmp() {
+        // Cancel any running tasks
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        if (countdownTask != null) {</span>
+<span class="nc" id="L235">            countdownTask.cancel();</span>
+<span class="nc" id="L236">            countdownTask = null;</span>
+        }
+<span class="nc bnc" id="L238" title="All 2 branches missed.">        if (cooldownTask != null) {</span>
+<span class="nc" id="L239">            cooldownTask.cancel();</span>
+<span class="nc" id="L240">            cooldownTask = null;</span>
+        }
+        
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        if (plugin.getEffectSystem() != null) {</span>
+<span class="nc" id="L244">            plugin.getEffectSystem().clearCountdownBossBar();</span>
+        }
+        
+        // Stop PvP protection if active
+<span class="nc bnc" id="L248" title="All 2 branches missed.">        if (plugin.getPvPManager() != null) {</span>
+<span class="nc" id="L249">            plugin.getPvPManager().stopPvPProtection();</span>
+        }
+        
+        // Reset state data
+<span class="nc" id="L253">        stateData.setCurrentState(PluginState.IDLE);</span>
+<span class="nc" id="L254">        stateData.setCountdownStartTime(0);</span>
+<span class="nc" id="L255">        stateData.setCooldownStartTime(0);</span>
+<span class="nc" id="L256">        stateData.setRemainingCountdown(0);</span>
+<span class="nc" id="L257">        stateData.setRemainingCooldown(0);</span>
+<span class="nc" id="L258">        stateData.setSmpStartTime(0);</span>
+<span class="nc" id="L259">        stateData.setSmpStarted(false);</span>
+<span class="nc" id="L260">        stateData.setPvpProtectionActive(false);</span>
+        
+        // Reset border and protections
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (plugin.getBorderManager() != null) {</span>
+<span class="nc" id="L264">            plugin.getBorderManager().setPreStartBorder();</span>
+        }
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        if (plugin.getBlockProtectionManager() != null) {</span>
+<span class="nc" id="L267">            plugin.getBlockProtectionManager().enableBlockProtection();</span>
+        }
+<span class="nc" id="L269">        applyPhaseSettings(false);</span>
+        
+        // Teleport all online players to a safe spawn location
+<span class="nc" id="L272">        World targetWorld = getTeleportWorld();</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">        if (targetWorld != null) {</span>
+<span class="nc" id="L274">            Location spawn = getSafeTeleportLocation(targetWorld);</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">            for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L276">                player.teleport(spawn);</span>
+<span class="nc" id="L277">            }</span>
+        }
+        
+        // Restart reminders if enabled
+<span class="nc bnc" id="L281" title="All 4 branches missed.">        if (plugin.getReminderSystem() != null &amp;&amp; plugin.getConfigManager().areJoinRemindersEnabled()) {</span>
+<span class="nc" id="L282">            plugin.getReminderSystem().stopReminders();</span>
+<span class="nc" id="L283">            plugin.getReminderSystem().startReminders();</span>
+        }
+        
+        // Clear saved state file and persist reset
+<span class="nc bnc" id="L287" title="All 2 branches missed.">        if (plugin.getDataManager() != null) {</span>
+<span class="nc" id="L288">            plugin.getDataManager().clearSavedState();</span>
+        }
+<span class="nc" id="L290">        persistState(&quot;SMP reset&quot;);</span>
+        
+<span class="nc" id="L292">        plugin.getLogger().info(&quot;SMP reset completed&quot;);</span>
+<span class="nc" id="L293">        return true;</span>
+    }
+    
+    private void handleCooldownTick() {
+<span class="nc bnc" id="L297" title="All 2 branches missed.">        if (getCurrentState() != PluginState.COOLDOWN) {</span>
+<span class="nc" id="L298">            return;</span>
+        }
+        
+<span class="nc" id="L301">        int remaining = stateData.getRemainingCooldown() - 1;</span>
+<span class="nc" id="L302">        stateData.setRemainingCooldown(remaining);</span>
+        
+        // Check if cooldown is complete
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        if (remaining &lt;= 0) {</span>
+<span class="nc" id="L306">            completeCooldown();</span>
+        }
+<span class="nc" id="L308">    }</span>
+    
+    private void completeCooldown() {
+        // Cancel cooldown timer
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        if (cooldownTask != null) {</span>
+<span class="nc" id="L313">            cooldownTask.cancel();</span>
+<span class="nc" id="L314">            cooldownTask = null;</span>
+        }
+        
+        // Play totem pop sound
+<span class="nc bnc" id="L318" title="All 2 branches missed.">        if (plugin.getEffectSystem() != null) {</span>
+<span class="nc" id="L319">            plugin.getEffectSystem().playTotemPopSound();</span>
+        }
+        
+        // Return to IDLE state
+<span class="nc" id="L323">        stateData.setCurrentState(PluginState.IDLE);</span>
+<span class="nc" id="L324">        stateData.setRemainingCooldown(0);</span>
+<span class="nc" id="L325">        persistState(&quot;Cooldown completed&quot;);</span>
+        
+<span class="nc" id="L327">        plugin.getLogger().info(&quot;Cooldown period completed. /smpstart is now available again.&quot;);</span>
+<span class="nc" id="L328">    }</span>
+    
+    @Override
+    public boolean canExecuteStart() {
+<span class="nc bnc" id="L332" title="All 4 branches missed.">        return getCurrentState() == PluginState.IDLE &amp;&amp; !stateData.isSmpStarted();</span>
+    }
+    
+    @Override
+    public PluginState getCurrentState() {
+<span class="nc" id="L337">        return stateData.getCurrentState();</span>
+    }
+    
+    @Override
+    public int getRemainingCountdown() {
+<span class="nc" id="L342">        return stateData.getRemainingCountdown();</span>
+    }
+    
+    @Override
+    public int getRemainingCooldown() {
+<span class="nc" id="L347">        return stateData.getRemainingCooldown();</span>
+    }
+    
+    /**
+     * Resume countdown or cooldown after a server restart.
+     * This prevents the plugin from getting stuck in COUNTDOWN/COOLDOWN without timers.
+     */
+    public void resumeStateAfterLoad() {
+<span class="nc bnc" id="L355" title="All 2 branches missed.">        if (stateData.getCurrentState() == PluginState.COUNTDOWN) {</span>
+<span class="nc" id="L356">            resumeCountdownAfterLoad();</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        } else if (stateData.getCurrentState() == PluginState.COOLDOWN) {</span>
+<span class="nc" id="L358">            resumeCooldownAfterLoad();</span>
+        }
+        
+<span class="nc" id="L361">        applyPhaseSettings(stateData.isSmpStarted());</span>
+<span class="nc" id="L362">    }</span>
+    
+    private void resumeCountdownAfterLoad() {
+<span class="nc" id="L365">        int durationSeconds = plugin.getConfigManager().getCountdownDuration();</span>
+<span class="nc" id="L366">        int remaining = calculateRemainingSeconds(</span>
+<span class="nc" id="L367">            stateData.getCountdownStartTime(),</span>
+            durationSeconds,
+<span class="nc" id="L369">            stateData.getRemainingCountdown()</span>
+        );
+        
+<span class="nc bnc" id="L372" title="All 2 branches missed.">        if (remaining &lt;= 0) {</span>
+<span class="nc" id="L373">            handleCountdownExpiredDuringDowntime(durationSeconds);</span>
+<span class="nc" id="L374">            return;</span>
+        }
+        
+<span class="nc" id="L377">        countdownTotalSeconds = durationSeconds;</span>
+<span class="nc" id="L378">        stateData.setCurrentState(PluginState.COUNTDOWN);</span>
+<span class="nc bnc" id="L379" title="All 2 branches missed.">        if (stateData.getCountdownStartTime() &lt;= 0) {</span>
+<span class="nc" id="L380">            long startTime = System.currentTimeMillis() - (durationSeconds - remaining) * 1000L;</span>
+<span class="nc" id="L381">            stateData.setCountdownStartTime(startTime);</span>
+        }
+        
+<span class="nc" id="L384">        stateData.setRemainingCountdown(remaining);</span>
+        
+        // Ensure pre-start border is set while countdown resumes
+<span class="nc bnc" id="L387" title="All 2 branches missed.">        if (plugin.getBorderManager() != null) {</span>
+<span class="nc" id="L388">            plugin.getBorderManager().setPreStartBorder();</span>
+        }
+        
+<span class="nc" id="L391">        scheduleCountdownTask();</span>
+<span class="nc" id="L392">        plugin.getLogger().info(&quot;Resumed SMP countdown with &quot; + remaining + &quot; seconds remaining&quot;);</span>
+<span class="nc" id="L393">    }</span>
+    
+    private void resumeCooldownAfterLoad() {
+<span class="nc" id="L396">        int durationSeconds = plugin.getConfigManager().getCooldownDuration();</span>
+<span class="nc" id="L397">        int remaining = calculateRemainingSeconds(</span>
+<span class="nc" id="L398">            stateData.getCooldownStartTime(),</span>
+            durationSeconds,
+<span class="nc" id="L400">            stateData.getRemainingCooldown()</span>
+        );
+        
+<span class="nc bnc" id="L403" title="All 2 branches missed.">        if (remaining &lt;= 0) {</span>
+<span class="nc" id="L404">            stateData.setCurrentState(PluginState.IDLE);</span>
+<span class="nc" id="L405">            stateData.setRemainingCooldown(0);</span>
+<span class="nc" id="L406">            persistState(&quot;Cooldown expired during downtime&quot;);</span>
+<span class="nc" id="L407">            plugin.getLogger().info(&quot;Cooldown expired during downtime. /smpstart is now available again.&quot;);</span>
+<span class="nc" id="L408">            return;</span>
+        }
+        
+<span class="nc" id="L411">        stateData.setCurrentState(PluginState.COOLDOWN);</span>
+<span class="nc bnc" id="L412" title="All 2 branches missed.">        if (stateData.getCooldownStartTime() &lt;= 0) {</span>
+<span class="nc" id="L413">            long startTime = System.currentTimeMillis() - (durationSeconds - remaining) * 1000L;</span>
+<span class="nc" id="L414">            stateData.setCooldownStartTime(startTime);</span>
+        }
+        
+<span class="nc" id="L417">        stateData.setRemainingCooldown(remaining);</span>
+<span class="nc" id="L418">        scheduleCooldownTask();</span>
+<span class="nc" id="L419">        plugin.getLogger().info(&quot;Resumed SMP cooldown with &quot; + remaining + &quot; seconds remaining&quot;);</span>
+<span class="nc" id="L420">    }</span>
+    
+    private void handleCountdownExpiredDuringDowntime(int countdownDurationSeconds) {
+<span class="nc" id="L423">        long now = System.currentTimeMillis();</span>
+<span class="nc" id="L424">        long countdownStart = stateData.getCountdownStartTime();</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">        long smpStartTime = countdownStart &gt; 0</span>
+<span class="nc" id="L426">            ? countdownStart + countdownDurationSeconds * 1000L</span>
+<span class="nc" id="L427">            : now;</span>
+        
+<span class="nc" id="L429">        stateData.setSmpStartTime(smpStartTime);</span>
+<span class="nc" id="L430">        stateData.setSmpStarted(true);</span>
+<span class="nc" id="L431">        stateData.setRemainingCountdown(0);</span>
+        
+<span class="nc bnc" id="L433" title="All 2 branches missed.">        if (plugin.getReminderSystem() != null) {</span>
+<span class="nc" id="L434">            plugin.getReminderSystem().stopReminders();</span>
+        }
+        
+<span class="nc bnc" id="L437" title="All 2 branches missed.">        if (plugin.getBorderManager() != null) {</span>
+<span class="nc" id="L438">            plugin.getBorderManager().setFinalBorder();</span>
+        }
+        
+<span class="nc bnc" id="L441" title="All 2 branches missed.">        if (plugin.getBlockProtectionManager() != null) {</span>
+<span class="nc" id="L442">            plugin.getBlockProtectionManager().disableBlockProtection();</span>
+        }
+        
+        // Resume PvP protection if it should still be active
+<span class="nc bnc" id="L446" title="All 2 branches missed.">        if (plugin.getPvPManager() != null) {</span>
+<span class="nc" id="L447">            resumePvPProtection(smpStartTime);</span>
+        }
+        
+<span class="nc" id="L450">        applyPhaseSettings(true);</span>
+        
+        // Determine cooldown status
+<span class="nc" id="L453">        int cooldownDurationSeconds = plugin.getConfigManager().getCooldownDuration();</span>
+<span class="nc" id="L454">        long cooldownStart = stateData.getCooldownStartTime();</span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">        if (cooldownStart &lt;= 0) {</span>
+<span class="nc" id="L456">            cooldownStart = smpStartTime;</span>
+<span class="nc" id="L457">            stateData.setCooldownStartTime(cooldownStart);</span>
+        }
+        
+<span class="nc" id="L460">        int remainingCooldown = calculateRemainingSeconds(</span>
+            cooldownStart,
+            cooldownDurationSeconds,
+<span class="nc" id="L463">            stateData.getRemainingCooldown()</span>
+        );
+        
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        if (remainingCooldown &gt; 0) {</span>
+<span class="nc" id="L467">            stateData.setCurrentState(PluginState.COOLDOWN);</span>
+<span class="nc" id="L468">            stateData.setRemainingCooldown(remainingCooldown);</span>
+<span class="nc" id="L469">            scheduleCooldownTask();</span>
+<span class="nc" id="L470">            plugin.getLogger().info(&quot;Countdown finished during downtime. Resumed cooldown with &quot; + remainingCooldown + &quot; seconds remaining&quot;);</span>
+        } else {
+<span class="nc" id="L472">            stateData.setCurrentState(PluginState.IDLE);</span>
+<span class="nc" id="L473">            stateData.setRemainingCooldown(0);</span>
+<span class="nc" id="L474">            plugin.getLogger().info(&quot;Countdown and cooldown finished during downtime. /smpstart is available.&quot;);</span>
+        }
+        
+<span class="nc" id="L477">        persistState(&quot;Countdown expired during downtime&quot;);</span>
+<span class="nc" id="L478">    }</span>
+    
+    private int calculateRemainingSeconds(long startTimeMs, int durationSeconds, int fallbackRemaining) {
+<span class="nc bnc" id="L481" title="All 2 branches missed.">        if (startTimeMs &lt;= 0) {</span>
+<span class="nc" id="L482">            return Math.max(0, fallbackRemaining);</span>
+        }
+<span class="nc" id="L484">        long elapsedSeconds = (System.currentTimeMillis() - startTimeMs) / 1000;</span>
+<span class="nc" id="L485">        return (int) Math.max(0, durationSeconds - elapsedSeconds);</span>
+    }
+    
+    private void scheduleCountdownTask() {
+<span class="nc bnc" id="L489" title="All 2 branches missed.">        if (countdownTask != null) {</span>
+<span class="nc" id="L490">            countdownTask.cancel();</span>
+        }
+        
+<span class="nc" id="L493">        countdownTask = new BukkitRunnable() {</span>
+            @Override
+            public void run() {
+<span class="nc" id="L496">                handleCountdownTick();</span>
+<span class="nc" id="L497">            }</span>
+<span class="nc" id="L498">        }.runTaskTimer(plugin, 0L, 20L); // Run every second (20 ticks)</span>
+<span class="nc" id="L499">    }</span>
+    
+    private void scheduleCooldownTask() {
+<span class="nc bnc" id="L502" title="All 2 branches missed.">        if (cooldownTask != null) {</span>
+<span class="nc" id="L503">            cooldownTask.cancel();</span>
+        }
+        
+<span class="nc" id="L506">        cooldownTask = new BukkitRunnable() {</span>
+            @Override
+            public void run() {
+<span class="nc" id="L509">                handleCooldownTick();</span>
+<span class="nc" id="L510">            }</span>
+<span class="nc" id="L511">        }.runTaskTimer(plugin, 20L, 20L); // Run every second starting after 1 second</span>
+<span class="nc" id="L512">    }</span>
+    
+    private void persistState(String context) {
+<span class="nc bnc" id="L515" title="All 2 branches missed.">        if (plugin.getDataManager() != null) {</span>
+<span class="nc" id="L516">            plugin.getDataManager().saveState(stateData);</span>
+<span class="nc" id="L517">            plugin.getLogger().info(&quot;State persisted: &quot; + context);</span>
+        }
+<span class="nc" id="L519">    }</span>
+    
+    private void applyPhaseSettings(boolean started) {
+<span class="nc" id="L522">        World world = getTeleportWorld();</span>
+<span class="nc bnc" id="L523" title="All 2 branches missed.">        if (world == null) {</span>
+<span class="nc" id="L524">            return;</span>
+        }
+        
+        // Apply difficulty
+<span class="nc bnc" id="L528" title="All 2 branches missed.">        String difficultyName = started</span>
+<span class="nc" id="L529">            ? plugin.getConfigManager().getStartedDifficulty()</span>
+<span class="nc" id="L530">            : plugin.getConfigManager().getStartingDifficulty();</span>
+<span class="nc bnc" id="L531" title="All 2 branches missed.">        Difficulty difficulty = parseDifficulty(difficultyName, started ? Difficulty.NORMAL : Difficulty.PEACEFUL);</span>
+<span class="nc" id="L532">        world.setDifficulty(difficulty);</span>
+        
+        // Apply mob spawning gamerule
+<span class="nc bnc" id="L535" title="All 2 branches missed.">        boolean disableMobSpawning = started</span>
+<span class="nc" id="L536">            ? plugin.getConfigManager().isStartedDisableMobSpawning()</span>
+<span class="nc" id="L537">            : plugin.getConfigManager().isStartingDisableMobSpawning();</span>
+<span class="nc bnc" id="L538" title="All 2 branches missed.">        world.setGameRule(GameRule.DO_MOB_SPAWNING, !disableMobSpawning);</span>
+<span class="nc" id="L539">    }</span>
+    
+    private Difficulty parseDifficulty(String name, Difficulty fallback) {
+<span class="nc bnc" id="L542" title="All 2 branches missed.">        if (name == null) {</span>
+<span class="nc" id="L543">            return fallback;</span>
+        }
+        try {
+<span class="nc" id="L546">            return Difficulty.valueOf(name.trim().toUpperCase());</span>
+<span class="nc" id="L547">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L548">            return fallback;</span>
+        }
+    }
+    
+    private World getTeleportWorld() {
+<span class="nc" id="L553">        String targetWorldName = plugin.getConfigManager().getWorldName();</span>
+<span class="nc bnc" id="L554" title="All 4 branches missed.">        if (targetWorldName != null &amp;&amp; !targetWorldName.trim().isEmpty()) {</span>
+<span class="nc" id="L555">            World world = Bukkit.getWorld(targetWorldName.trim());</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">            if (world != null) {</span>
+<span class="nc" id="L557">                return world;</span>
+            }
+        }
+        
+<span class="nc bnc" id="L561" title="All 2 branches missed.">        if (!Bukkit.getWorlds().isEmpty()) {</span>
+<span class="nc" id="L562">            return Bukkit.getWorlds().get(0);</span>
+        }
+        
+<span class="nc" id="L565">        return null;</span>
+    }
+    
+    private Location getSafeTeleportLocation(World world) {
+<span class="nc" id="L569">        Location spawn = world.getSpawnLocation();</span>
+        try {
+<span class="nc bnc" id="L571" title="All 2 branches missed.">            if (world.getWorldBorder().isInside(spawn)) {</span>
+<span class="nc" id="L572">                return spawn;</span>
+            }
+<span class="nc" id="L574">        } catch (Exception e) {</span>
+<span class="nc" id="L575">            return spawn;</span>
+<span class="nc" id="L576">        }</span>
+        
+<span class="nc" id="L578">        Location center = world.getWorldBorder().getCenter();</span>
+<span class="nc" id="L579">        int x = center.getBlockX();</span>
+<span class="nc" id="L580">        int z = center.getBlockZ();</span>
+<span class="nc" id="L581">        int y = world.getHighestBlockYAt(x, z) + 1;</span>
+<span class="nc bnc" id="L582" title="All 2 branches missed.">        if (y &lt; world.getMinHeight()) {</span>
+<span class="nc" id="L583">            y = world.getMinHeight();</span>
+        }
+<span class="nc" id="L585">        return new Location(world, x + 0.5, y, z + 0.5);</span>
+    }
+    
+    /**
+     * Cleanup method to cancel any running tasks
+     */
+    public void cleanup() {
+<span class="nc bnc" id="L592" title="All 2 branches missed.">        if (countdownTask != null) {</span>
+<span class="nc" id="L593">            countdownTask.cancel();</span>
+<span class="nc" id="L594">            countdownTask = null;</span>
+        }
+<span class="nc bnc" id="L596" title="All 2 branches missed.">        if (cooldownTask != null) {</span>
+<span class="nc" id="L597">            cooldownTask.cancel();</span>
+<span class="nc" id="L598">            cooldownTask = null;</span>
+        }
+<span class="nc bnc" id="L600" title="All 2 branches missed.">        if (plugin.getEffectSystem() != null) {</span>
+<span class="nc" id="L601">            plugin.getEffectSystem().clearCountdownBossBar();</span>
+        }
+<span class="nc" id="L603">    }</span>
+    
+    /**
+     * Resume PvP protection after server restart
+     * @param smpStartTime when the SMP originally started
+     */
+    private void resumePvPProtection(long smpStartTime) {
+        try {
+<span class="nc" id="L611">            int protectionDurationMinutes = plugin.getConfigManager().getPvpProtectionDuration();</span>
+<span class="nc" id="L612">            long elapsedMs = System.currentTimeMillis() - smpStartTime;</span>
+<span class="nc" id="L613">            long elapsedMinutes = elapsedMs / (60 * 1000);</span>
+            
+<span class="nc bnc" id="L615" title="All 2 branches missed.">            if (elapsedMinutes &lt; protectionDurationMinutes) {</span>
+                // Protection should still be active
+<span class="nc" id="L617">                plugin.getLogger().info(&quot;Resuming PvP protection (&quot; + (protectionDurationMinutes - elapsedMinutes) + &quot; minutes remaining)&quot;);</span>
+<span class="nc" id="L618">                stateData.setPvpProtectionActive(true);</span>
+<span class="nc bnc" id="L619" title="All 2 branches missed.">                if (plugin.getPvPManager() instanceof com.muzlik.smpstart.pvp.PvPManagerImpl) {</span>
+<span class="nc" id="L620">                    ((com.muzlik.smpstart.pvp.PvPManagerImpl) plugin.getPvPManager()).startPvPProtection(smpStartTime);</span>
+                }
+            } else {
+                // Protection period has expired
+<span class="nc" id="L624">                plugin.getLogger().info(&quot;PvP protection period has expired during server downtime&quot;);</span>
+<span class="nc" id="L625">                stateData.setPvpProtectionActive(false);</span>
+            }
+<span class="nc" id="L627">        } catch (Exception e) {</span>
+<span class="nc" id="L628">            plugin.getLogger().warning(&quot;Failed to resume PvP protection: &quot; + e.getMessage());</span>
+<span class="nc" id="L629">        }</span>
+<span class="nc" id="L630">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

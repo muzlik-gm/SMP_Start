@@ -1,0 +1,8 @@
+/workspace/src/test/java/com/muzlik/smpstart/commands/CommandManagerTest.java
+/workspace/src/test/java/com/muzlik/smpstart/utils/ErrorHandlerTest.java
+/workspace/src/test/java/com/muzlik/smpstart/effects/EffectSystemTest.java
+/workspace/src/test/java/com/muzlik/smpstart/border/BorderManagerTest.java
+/workspace/src/test/java/com/muzlik/smpstart/SMPStartPluginTest.java
+/workspace/src/test/java/com/muzlik/smpstart/state/StateManagerTest.java
+/workspace/src/test/java/com/muzlik/smpstart/config/ConfigManagerTest.java
+/workspace/src/test/java/com/muzlik/smpstart/reminders/ReminderSystemTest.java

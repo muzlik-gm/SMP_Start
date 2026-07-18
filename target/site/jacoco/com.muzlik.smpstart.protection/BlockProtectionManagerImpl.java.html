@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BlockProtectionManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.protection</a> &gt; <span class="el_source">BlockProtectionManagerImpl.java</span></div><h1>BlockProtectionManagerImpl.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.protection;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.WorldBorder;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryType;
+import com.muzlik.smpstart.state.StateManagerImpl;
+import org.bukkit.entity.Projectile;
+import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.entity.Entity;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Implementation of BlockProtectionManager that prevents block interactions before SMP starts
+ */
+public class BlockProtectionManagerImpl implements BlockProtectionManager, Listener {
+    
+    private final SMPStartPlugin plugin;
+<span class="nc" id="L35">    private boolean blockProtectionActive = true; // Start with protection enabled</span>
+    private static final long SPAWN_PROTECTION_TICKS = 100L;
+<span class="nc" id="L37">    private final Set&lt;UUID&gt; spawnProtectedPlayers = new HashSet&lt;&gt;();</span>
+    
+<span class="nc" id="L39">    public BlockProtectionManagerImpl(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L40">        this.plugin = plugin;</span>
+        // Register event listener
+<span class="nc" id="L42">        Bukkit.getPluginManager().registerEvents(this, plugin);</span>
+<span class="nc" id="L43">    }</span>
+    
+    @Override
+    public void enableBlockProtection() {
+<span class="nc" id="L47">        blockProtectionActive = true;</span>
+<span class="nc" id="L48">        plugin.getLogger().info(&quot;Block protection enabled - players cannot break/place blocks&quot;);</span>
+        
+        // Notify all online players
+<span class="nc" id="L51">        String message = ChatColor.YELLOW + &quot;[MSS] &quot; + ChatColor.RED +</span>
+                        &quot;Block breaking/placing is disabled until the SMP starts!&quot;;
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L54">            player.sendMessage(message);</span>
+<span class="nc" id="L55">        }</span>
+<span class="nc" id="L56">    }</span>
+    
+    @Override
+    public void disableBlockProtection() {
+<span class="nc" id="L60">        blockProtectionActive = false;</span>
+<span class="nc" id="L61">        plugin.getLogger().info(&quot;Block protection disabled - players can now break/place blocks&quot;);</span>
+        
+        // Notify all online players
+<span class="nc" id="L64">        String message = ChatColor.YELLOW + &quot;[MSS] &quot; + ChatColor.GREEN +</span>
+                        &quot;Block breaking/placing is now enabled! The SMP has begun!&quot;;
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L67">            player.sendMessage(message);</span>
+<span class="nc" id="L68">        }</span>
+<span class="nc" id="L69">    }</span>
+    
+    @Override
+    public boolean isBlockProtectionActive() {
+<span class="nc" id="L73">        return blockProtectionActive;</span>
+    }
+    
+    /**
+     * Prevent block breaking when protection is active
+     */
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (!blockProtectionActive) {</span>
+<span class="nc" id="L82">            return;</span>
+        }
+        
+<span class="nc" id="L85">        Player player = event.getPlayer();</span>
+        
+        // Allow OPs to break blocks for setup purposes
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (player.isOp()) {</span>
+<span class="nc" id="L89">            return;</span>
+        }
+        
+        // Cancel the event and notify player
+<span class="nc" id="L93">        event.setCancelled(true);</span>
+<span class="nc" id="L94">        player.sendMessage(ChatColor.RED + &quot;Block breaking is disabled until the SMP starts! Use /smpstart to begin.&quot;);</span>
+<span class="nc" id="L95">    }</span>
+    
+    /**
+     * Prevent block placing when protection is active
+     */
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (!blockProtectionActive) {</span>
+<span class="nc" id="L103">            return;</span>
+        }
+        
+<span class="nc" id="L106">        Player player = event.getPlayer();</span>
+        
+        // Allow OPs to place blocks for setup purposes
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (player.isOp()) {</span>
+<span class="nc" id="L110">            return;</span>
+        }
+        
+        // Cancel the event and notify player
+<span class="nc" id="L114">        event.setCancelled(true);</span>
+<span class="nc" id="L115">        player.sendMessage(ChatColor.RED + &quot;Block placing is disabled until the SMP starts! Use /smpstart to begin.&quot;);</span>
+<span class="nc" id="L116">    }</span>
+    
+    /**
+     * Prevent certain interactions when protection is active
+     */
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (!blockProtectionActive) {</span>
+<span class="nc" id="L124">            return;</span>
+        }
+        
+<span class="nc" id="L127">        Player player = event.getPlayer();</span>
+        
+        // Allow OPs to interact for setup purposes
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (player.isOp()) {</span>
+<span class="nc" id="L131">            return;</span>
+        }
+        
+        // Check if this is a block interaction that should be restricted
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (event.getClickedBlock() != null) {</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            switch (event.getClickedBlock().getType()) {</span>
+                case CHEST:
+                case BARREL:
+                case SHULKER_BOX:
+                case ENDER_CHEST:
+                case FURNACE:
+                case BLAST_FURNACE:
+                case SMOKER:
+                case CRAFTING_TABLE:
+                case ENCHANTING_TABLE:
+                case ANVIL:
+                case CHIPPED_ANVIL:
+                case DAMAGED_ANVIL:
+                case BREWING_STAND:
+                case CAULDRON:
+                case WATER_CAULDRON:
+                case LAVA_CAULDRON:
+                case POWDER_SNOW_CAULDRON:
+                    // Cancel interaction with storage/utility blocks
+<span class="nc" id="L155">                    event.setCancelled(true);</span>
+<span class="nc" id="L156">                    player.sendMessage(ChatColor.RED + &quot;Block interactions are disabled until the SMP starts!&quot;);</span>
+<span class="nc" id="L157">                    break;</span>
+                default:
+                    // Allow other interactions (like doors, buttons, etc.)
+                    break;
+            }
+        }
+<span class="nc" id="L163">    }</span>
+    
+    /**
+     * Prevent opening certain inventories when protection is active
+     */
+    @EventHandler
+    public void onInventoryOpen(InventoryOpenEvent event) {
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (!blockProtectionActive) {</span>
+<span class="nc" id="L171">            return;</span>
+        }
+        
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (!(event.getPlayer() instanceof Player)) {</span>
+<span class="nc" id="L175">            return;</span>
+        }
+        
+<span class="nc" id="L178">        Player player = (Player) event.getPlayer();</span>
+        
+        // Allow OPs to open inventories for setup purposes
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (player.isOp()) {</span>
+<span class="nc" id="L182">            return;</span>
+        }
+        
+        // Prevent opening certain inventory types
+<span class="nc" id="L186">        InventoryType type = event.getInventory().getType();</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        switch (type) {</span>
+            case CHEST:
+            case BARREL:
+            case SHULKER_BOX:
+            case ENDER_CHEST:
+            case FURNACE:
+            case BLAST_FURNACE:
+            case SMOKER:
+            case ENCHANTING:
+            case ANVIL:
+            case BREWING:
+<span class="nc" id="L198">                event.setCancelled(true);</span>
+<span class="nc" id="L199">                player.sendMessage(ChatColor.RED + &quot;Container access is disabled until the SMP starts!&quot;);</span>
+<span class="nc" id="L200">                break;</span>
+            default:
+                // Allow other inventory types (player inventory, crafting, etc.)
+                break;
+        }
+<span class="nc" id="L205">    }</span>
+    
+    /**
+     * Ensure players don't spawn outside the border before SMP starts
+     */
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+<span class="nc" id="L212">        Player player = event.getPlayer();</span>
+<span class="nc" id="L213">        Bukkit.getScheduler().runTaskLater(plugin, () -&gt; ensureInsideBorder(player, &quot;join&quot;), 1L);</span>
+<span class="nc" id="L214">    }</span>
+    
+    @EventHandler
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+<span class="nc" id="L218">        Player player = event.getPlayer();</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        if (!isPreStart()) {</span>
+<span class="nc" id="L220">            return;</span>
+        }
+        
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        if (!isTargetWorld(player.getWorld())) {</span>
+<span class="nc" id="L224">            return;</span>
+        }
+        
+<span class="nc" id="L227">        WorldBorder border = player.getWorld().getWorldBorder();</span>
+<span class="nc bnc" id="L228" title="All 4 branches missed.">        if (border != null &amp;&amp; !border.isInside(event.getRespawnLocation())) {</span>
+<span class="nc" id="L229">            Location safeLocation = getSafeLocation(player, border);</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            if (safeLocation != null) {</span>
+<span class="nc" id="L231">                event.setRespawnLocation(safeLocation);</span>
+<span class="nc" id="L232">                Bukkit.getScheduler().runTaskLater(plugin, () -&gt; applyTemporaryInvulnerability(player), 1L);</span>
+            }
+        }
+<span class="nc" id="L235">    }</span>
+    
+    /**
+     * Prevent mob damage during pre-start phase (and optionally after start)
+     */
+    @EventHandler
+    public void onMobDamagePlayer(EntityDamageByEntityEvent event) {
+<span class="nc bnc" id="L242" title="All 2 branches missed.">        if (!(event.getEntity() instanceof Player)) {</span>
+<span class="nc" id="L243">            return;</span>
+        }
+        
+<span class="nc" id="L246">        Player player = (Player) event.getEntity();</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        if (!isTargetWorld(player.getWorld())) {</span>
+<span class="nc" id="L248">            return;</span>
+        }
+        
+<span class="nc bnc" id="L251" title="All 2 branches missed.">        if (!isMobDamageDisabledForPhase()) {</span>
+<span class="nc" id="L252">            return;</span>
+        }
+        
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (isPlayerDamager(event.getDamager())) {</span>
+<span class="nc" id="L256">            return;</span>
+        }
+        
+<span class="nc" id="L259">        event.setCancelled(true);</span>
+<span class="nc" id="L260">    }</span>
+    
+    private void ensureInsideBorder(Player player, String reason) {
+<span class="nc bnc" id="L263" title="All 6 branches missed.">        if (!isPreStart() || player == null || !player.isOnline()) {</span>
+<span class="nc" id="L264">            return;</span>
+        }
+        
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (!isTargetWorld(player.getWorld())) {</span>
+<span class="nc" id="L268">            return;</span>
+        }
+        
+<span class="nc" id="L271">        WorldBorder border = player.getWorld().getWorldBorder();</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (border == null) {</span>
+<span class="nc" id="L273">            return;</span>
+        }
+        
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        if (border.isInside(player.getLocation())) {</span>
+<span class="nc" id="L277">            return;</span>
+        }
+        
+<span class="nc" id="L280">        Location safeLocation = getSafeLocation(player, border);</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">        if (safeLocation == null) {</span>
+<span class="nc" id="L282">            return;</span>
+        }
+        
+<span class="nc" id="L285">        player.teleport(safeLocation);</span>
+<span class="nc" id="L286">        applyTemporaryInvulnerability(player);</span>
+<span class="nc" id="L287">        plugin.getLogger().info(&quot;Teleported &quot; + player.getName() + &quot; inside the border (&quot; + reason + &quot;)&quot;);</span>
+<span class="nc" id="L288">    }</span>
+    
+    private Location getSafeLocation(Player player, WorldBorder border) {
+<span class="nc" id="L291">        World world = player.getWorld();</span>
+<span class="nc" id="L292">        Location spawn = world.getSpawnLocation();</span>
+<span class="nc bnc" id="L293" title="All 2 branches missed.">        if (border.isInside(spawn)) {</span>
+<span class="nc" id="L294">            return spawn;</span>
+        }
+        
+<span class="nc" id="L297">        Location center = border.getCenter();</span>
+<span class="nc" id="L298">        int x = center.getBlockX();</span>
+<span class="nc" id="L299">        int z = center.getBlockZ();</span>
+<span class="nc" id="L300">        int y = world.getHighestBlockYAt(x, z) + 1;</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        if (y &lt; world.getMinHeight()) {</span>
+<span class="nc" id="L302">            y = world.getMinHeight();</span>
+        }
+<span class="nc" id="L304">        return new Location(world, x + 0.5, y, z + 0.5);</span>
+    }
+    
+    private void applyTemporaryInvulnerability(Player player) {
+<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (player.isInvulnerable()) {</span>
+<span class="nc" id="L309">            return;</span>
+        }
+<span class="nc" id="L311">        player.setInvulnerable(true);</span>
+<span class="nc" id="L312">        spawnProtectedPlayers.add(player.getUniqueId());</span>
+        
+<span class="nc" id="L314">        Bukkit.getScheduler().runTaskLater(plugin, () -&gt; {</span>
+<span class="nc bnc" id="L315" title="All 4 branches missed.">            if (player.isOnline() &amp;&amp; spawnProtectedPlayers.remove(player.getUniqueId())) {</span>
+<span class="nc" id="L316">                player.setInvulnerable(false);</span>
+            }
+<span class="nc" id="L318">        }, SPAWN_PROTECTION_TICKS);</span>
+<span class="nc" id="L319">    }</span>
+    
+    private boolean isPreStart() {
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        if (plugin.getStateManager() instanceof StateManagerImpl) {</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">            return !((StateManagerImpl) plugin.getStateManager()).getStateData().isSmpStarted();</span>
+        }
+<span class="nc" id="L325">        return true;</span>
+    }
+    
+    private boolean isTargetWorld(World world) {
+<span class="nc" id="L329">        String targetWorld = plugin.getConfigManager().getWorldName();</span>
+<span class="nc bnc" id="L330" title="All 4 branches missed.">        if (targetWorld != null &amp;&amp; !targetWorld.trim().isEmpty()) {</span>
+<span class="nc" id="L331">            return world.getName().equalsIgnoreCase(targetWorld.trim());</span>
+        }
+<span class="nc" id="L333">        return true;</span>
+    }
+    
+    private boolean isMobDamageDisabledForPhase() {
+<span class="nc bnc" id="L337" title="All 2 branches missed.">        boolean started = !isPreStart();</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">        if (started) {</span>
+<span class="nc" id="L339">            return plugin.getConfigManager().isStartedDisableMobDamage();</span>
+        }
+<span class="nc" id="L341">        return plugin.getConfigManager().isStartingDisableMobDamage();</span>
+    }
+    
+    private boolean isPlayerDamager(Entity damager) {
+<span class="nc bnc" id="L345" title="All 2 branches missed.">        if (damager instanceof Player) {</span>
+<span class="nc" id="L346">            return true;</span>
+        }
+<span class="nc bnc" id="L348" title="All 2 branches missed.">        if (damager instanceof Projectile) {</span>
+<span class="nc" id="L349">            ProjectileSource source = ((Projectile) damager).getShooter();</span>
+<span class="nc" id="L350">            return source instanceof Player;</span>
+        }
+<span class="nc" id="L352">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

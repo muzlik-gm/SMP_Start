@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.config</a> &gt; <span class="el_source">ConfigManagerImpl.java</span></div><h1>ConfigManagerImpl.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.config;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import com.muzlik.smpstart.data.PluginConfig;
+import org.bukkit.configuration.file.FileConfiguration;
+
+/**
+ * Implementation of ConfigManager
+ */
+public class ConfigManagerImpl implements ConfigManager {
+
+    private final SMPStartPlugin plugin;
+    private final PluginConfig config;
+
+<span class="nc" id="L15">    public ConfigManagerImpl(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L16">        this.plugin = plugin;</span>
+<span class="nc" id="L17">        this.config = new PluginConfig();</span>
+<span class="nc" id="L18">        loadConfig();</span>
+<span class="nc" id="L19">    }</span>
+
+    private void loadConfig() {
+<span class="nc" id="L22">        plugin.saveDefaultConfig();</span>
+<span class="nc" id="L23">        FileConfiguration c = plugin.getConfig();</span>
+
+        // general
+<span class="nc" id="L26">        config.setWorldName(c.getString(&quot;general.world&quot;, &quot;&quot;));</span>
+<span class="nc" id="L27">        config.setMinOnlinePlayers(c.getInt(&quot;general.min-players&quot;, 1));</span>
+
+        // countdown
+<span class="nc" id="L30">        config.setCountdownDuration(c.getInt(&quot;countdown.duration&quot;, 10));</span>
+<span class="nc" id="L31">        config.setCooldownDuration(c.getInt(&quot;countdown.cooldown&quot;, 60));</span>
+<span class="nc" id="L32">        config.setCountdownBossBarEnabled(c.getBoolean(&quot;countdown.bossbar&quot;, true));</span>
+
+        // border
+<span class="nc" id="L35">        config.setPreStartBorderSize(c.getDouble(&quot;border.pre-start-size&quot;, 10.0));</span>
+<span class="nc" id="L36">        config.setFinalBorderSize(c.getDouble(&quot;border.final-size&quot;, 10000.0));</span>
+<span class="nc" id="L37">        config.setBorderTransitionSeconds(c.getInt(&quot;border.transition-seconds&quot;, 10));</span>
+<span class="nc" id="L38">        config.setBorderCenterMode(normalizeBorderCenterMode(c.getString(&quot;border.center-mode&quot;, &quot;spawn&quot;)));</span>
+<span class="nc" id="L39">        config.setBorderCenterX(c.getDouble(&quot;border.center-x&quot;, 0.0));</span>
+<span class="nc" id="L40">        config.setBorderCenterZ(c.getDouble(&quot;border.center-z&quot;, 0.0));</span>
+<span class="nc" id="L41">        config.setPreStartBorderDamageAmount(c.getDouble(&quot;border.pre-start-damage.amount&quot;, 0.0));</span>
+<span class="nc" id="L42">        config.setPreStartBorderDamageBuffer(c.getDouble(&quot;border.pre-start-damage.buffer&quot;, 0.0));</span>
+<span class="nc" id="L43">        config.setBorderDamageAmount(c.getDouble(&quot;border.post-start-damage.amount&quot;, 0.2));</span>
+<span class="nc" id="L44">        config.setBorderDamageBuffer(c.getDouble(&quot;border.post-start-damage.buffer&quot;, 5.0));</span>
+
+        // pvp
+<span class="nc" id="L47">        config.setPvpProtectionDuration(c.getInt(&quot;pvp.protection-duration&quot;, 30));</span>
+<span class="nc" id="L48">        config.setPreStartBlockProtectionEnabled(c.getBoolean(&quot;pvp.pre-start-block-protection&quot;, true));</span>
+
+        // reminders
+<span class="nc" id="L51">        config.setJoinRemindersEnabled(c.getBoolean(&quot;reminders.enabled&quot;, true));</span>
+<span class="nc" id="L52">        config.setReminderInterval(c.getInt(&quot;reminders.interval&quot;, 60));</span>
+
+        // phases
+<span class="nc" id="L55">        config.setStartingDifficulty(c.getString(&quot;phases.pre-start.difficulty&quot;, &quot;peaceful&quot;));</span>
+<span class="nc" id="L56">        config.setStartingDisableMobSpawning(c.getBoolean(&quot;phases.pre-start.disable-mob-spawning&quot;, true));</span>
+<span class="nc" id="L57">        config.setStartingDisableMobDamage(c.getBoolean(&quot;phases.pre-start.disable-mob-damage&quot;, true));</span>
+<span class="nc" id="L58">        config.setStartedDifficulty(c.getString(&quot;phases.started.difficulty&quot;, &quot;normal&quot;));</span>
+<span class="nc" id="L59">        config.setStartedDisableMobSpawning(c.getBoolean(&quot;phases.started.disable-mob-spawning&quot;, false));</span>
+<span class="nc" id="L60">        config.setStartedDisableMobDamage(c.getBoolean(&quot;phases.started.disable-mob-damage&quot;, false));</span>
+<span class="nc" id="L61">    }</span>
+
+    // -------------------------------------------------------------------------
+    // Setters — also write back to the Bukkit config object so saveConfig works
+    // -------------------------------------------------------------------------
+
+<span class="nc" id="L67">    @Override public int getCountdownDuration() { return config.getCountdownDuration(); }</span>
+    @Override public void setCountdownDuration(int duration) {
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (duration &gt; 0) { config.setCountdownDuration(duration); plugin.getConfig().set(&quot;countdown.duration&quot;, duration); }</span>
+<span class="nc" id="L70">    }</span>
+
+<span class="nc" id="L72">    @Override public int getCooldownDuration() { return config.getCooldownDuration(); }</span>
+    @Override public void setCooldownDuration(int duration) {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (duration &gt; 0) { config.setCooldownDuration(duration); plugin.getConfig().set(&quot;countdown.cooldown&quot;, duration); }</span>
+<span class="nc" id="L75">    }</span>
+
+<span class="nc" id="L77">    @Override public double getPreStartBorderSize() { return config.getPreStartBorderSize(); }</span>
+    @Override public void setPreStartBorderSize(double size) {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (isValidBorderSize(size)) { config.setPreStartBorderSize(size); plugin.getConfig().set(&quot;border.pre-start-size&quot;, size); }</span>
+<span class="nc" id="L80">    }</span>
+
+<span class="nc" id="L82">    @Override public double getFinalBorderSize() { return config.getFinalBorderSize(); }</span>
+    @Override public void setFinalBorderSize(double size) {
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (isValidBorderSize(size)) { config.setFinalBorderSize(size); plugin.getConfig().set(&quot;border.final-size&quot;, size); }</span>
+<span class="nc" id="L85">    }</span>
+
+<span class="nc" id="L87">    @Override public boolean areJoinRemindersEnabled() { return config.isJoinRemindersEnabled(); }</span>
+    @Override public void setJoinRemindersEnabled(boolean enabled) {
+<span class="nc" id="L89">        config.setJoinRemindersEnabled(enabled); plugin.getConfig().set(&quot;reminders.enabled&quot;, enabled);</span>
+<span class="nc" id="L90">    }</span>
+
+<span class="nc" id="L92">    @Override public int getReminderInterval() { return config.getReminderInterval(); }</span>
+    @Override public void setReminderInterval(int interval) {
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (interval &gt; 0) { config.setReminderInterval(interval); plugin.getConfig().set(&quot;reminders.interval&quot;, interval); }</span>
+<span class="nc" id="L95">    }</span>
+
+<span class="nc" id="L97">    @Override public String getWorldName() { return config.getWorldName(); }</span>
+    @Override public void setWorldName(String worldName) {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        String value = worldName != null ? worldName.trim() : &quot;&quot;;</span>
+<span class="nc" id="L100">        config.setWorldName(value); plugin.getConfig().set(&quot;general.world&quot;, value);</span>
+<span class="nc" id="L101">    }</span>
+
+<span class="nc" id="L103">    @Override public int getMinOnlinePlayers() { return config.getMinOnlinePlayers(); }</span>
+    @Override public void setMinOnlinePlayers(int minPlayers) {
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (minPlayers &gt;= 0) { config.setMinOnlinePlayers(minPlayers); plugin.getConfig().set(&quot;general.min-players&quot;, minPlayers); }</span>
+<span class="nc" id="L106">    }</span>
+
+<span class="nc" id="L108">    @Override public boolean isCountdownBossBarEnabled() { return config.isCountdownBossBarEnabled(); }</span>
+    @Override public void setCountdownBossBarEnabled(boolean enabled) {
+<span class="nc" id="L110">        config.setCountdownBossBarEnabled(enabled); plugin.getConfig().set(&quot;countdown.bossbar&quot;, enabled);</span>
+<span class="nc" id="L111">    }</span>
+
+<span class="nc" id="L113">    @Override public String getBorderCenterMode() { return config.getBorderCenterMode(); }</span>
+    @Override public void setBorderCenterMode(String mode) {
+<span class="nc" id="L115">        String normalized = normalizeBorderCenterMode(mode);</span>
+<span class="nc" id="L116">        config.setBorderCenterMode(normalized); plugin.getConfig().set(&quot;border.center-mode&quot;, normalized);</span>
+<span class="nc" id="L117">    }</span>
+
+<span class="nc" id="L119">    @Override public double getBorderCenterX() { return config.getBorderCenterX(); }</span>
+<span class="nc" id="L120">    @Override public double getBorderCenterZ() { return config.getBorderCenterZ(); }</span>
+    @Override public void setBorderCenterPosition(double x, double z) {
+<span class="nc" id="L122">        config.setBorderCenterX(x); config.setBorderCenterZ(z);</span>
+<span class="nc" id="L123">        plugin.getConfig().set(&quot;border.center-x&quot;, x); plugin.getConfig().set(&quot;border.center-z&quot;, z);</span>
+<span class="nc" id="L124">    }</span>
+
+<span class="nc" id="L126">    @Override public int getBorderTransitionSeconds() { return config.getBorderTransitionSeconds(); }</span>
+    @Override public void setBorderTransitionSeconds(int seconds) {
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (seconds &gt;= 0) { config.setBorderTransitionSeconds(seconds); plugin.getConfig().set(&quot;border.transition-seconds&quot;, seconds); }</span>
+<span class="nc" id="L129">    }</span>
+
+<span class="nc" id="L131">    @Override public double getPreStartBorderDamageAmount() { return config.getPreStartBorderDamageAmount(); }</span>
+<span class="nc" id="L132">    @Override public double getPreStartBorderDamageBuffer() { return config.getPreStartBorderDamageBuffer(); }</span>
+<span class="nc" id="L133">    @Override public double getBorderDamageAmount() { return config.getBorderDamageAmount(); }</span>
+<span class="nc" id="L134">    @Override public double getBorderDamageBuffer() { return config.getBorderDamageBuffer(); }</span>
+    @Override public void setBorderDamageValues(double preStartAmount, double preStartBuffer, double amount, double buffer) {
+<span class="nc" id="L136">        config.setPreStartBorderDamageAmount(preStartAmount);</span>
+<span class="nc" id="L137">        config.setPreStartBorderDamageBuffer(preStartBuffer);</span>
+<span class="nc" id="L138">        config.setBorderDamageAmount(amount);</span>
+<span class="nc" id="L139">        config.setBorderDamageBuffer(buffer);</span>
+<span class="nc" id="L140">        plugin.getConfig().set(&quot;border.pre-start-damage.amount&quot;, preStartAmount);</span>
+<span class="nc" id="L141">        plugin.getConfig().set(&quot;border.pre-start-damage.buffer&quot;, preStartBuffer);</span>
+<span class="nc" id="L142">        plugin.getConfig().set(&quot;border.post-start-damage.amount&quot;, amount);</span>
+<span class="nc" id="L143">        plugin.getConfig().set(&quot;border.post-start-damage.buffer&quot;, buffer);</span>
+<span class="nc" id="L144">    }</span>
+
+<span class="nc" id="L146">    @Override public String getStartingDifficulty() { return config.getStartingDifficulty(); }</span>
+<span class="nc" id="L147">    @Override public String getStartedDifficulty() { return config.getStartedDifficulty(); }</span>
+    @Override public void setPhaseDifficulties(String startingDifficulty, String startedDifficulty) {
+<span class="nc" id="L149">        config.setStartingDifficulty(startingDifficulty); config.setStartedDifficulty(startedDifficulty);</span>
+<span class="nc" id="L150">        plugin.getConfig().set(&quot;phases.pre-start.difficulty&quot;, startingDifficulty);</span>
+<span class="nc" id="L151">        plugin.getConfig().set(&quot;phases.started.difficulty&quot;, startedDifficulty);</span>
+<span class="nc" id="L152">    }</span>
+
+<span class="nc" id="L154">    @Override public boolean isStartingDisableMobSpawning() { return config.isStartingDisableMobSpawning(); }</span>
+<span class="nc" id="L155">    @Override public boolean isStartedDisableMobSpawning() { return config.isStartedDisableMobSpawning(); }</span>
+<span class="nc" id="L156">    @Override public boolean isStartingDisableMobDamage() { return config.isStartingDisableMobDamage(); }</span>
+<span class="nc" id="L157">    @Override public boolean isStartedDisableMobDamage() { return config.isStartedDisableMobDamage(); }</span>
+    @Override public void setPhaseMobProtection(boolean startingSpawnDisable, boolean startedSpawnDisable,
+                                                boolean startingDamageDisable, boolean startedDamageDisable) {
+<span class="nc" id="L160">        config.setStartingDisableMobSpawning(startingSpawnDisable);</span>
+<span class="nc" id="L161">        config.setStartedDisableMobSpawning(startedSpawnDisable);</span>
+<span class="nc" id="L162">        config.setStartingDisableMobDamage(startingDamageDisable);</span>
+<span class="nc" id="L163">        config.setStartedDisableMobDamage(startedDamageDisable);</span>
+<span class="nc" id="L164">        plugin.getConfig().set(&quot;phases.pre-start.disable-mob-spawning&quot;, startingSpawnDisable);</span>
+<span class="nc" id="L165">        plugin.getConfig().set(&quot;phases.started.disable-mob-spawning&quot;, startedSpawnDisable);</span>
+<span class="nc" id="L166">        plugin.getConfig().set(&quot;phases.pre-start.disable-mob-damage&quot;, startingDamageDisable);</span>
+<span class="nc" id="L167">        plugin.getConfig().set(&quot;phases.started.disable-mob-damage&quot;, startedDamageDisable);</span>
+<span class="nc" id="L168">    }</span>
+
+<span class="nc" id="L170">    @Override public int getPvpProtectionDuration() { return config.getPvpProtectionDuration(); }</span>
+    @Override public void setPvpProtectionDuration(int duration) {
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (duration &gt;= 0) { config.setPvpProtectionDuration(duration); plugin.getConfig().set(&quot;pvp.protection-duration&quot;, duration); }</span>
+<span class="nc" id="L173">    }</span>
+
+    @Override public boolean isPreStartBlockProtectionEnabled() {
+<span class="nc" id="L176">        return config.isPreStartBlockProtectionEnabled();</span>
+    }
+
+    @Override public void setPreStartBlockProtectionEnabled(boolean enabled) {
+<span class="nc" id="L180">        config.setPreStartBlockProtectionEnabled(enabled);</span>
+<span class="nc" id="L181">        plugin.getConfig().set(&quot;pvp.pre-start-block-protection&quot;, enabled);</span>
+<span class="nc" id="L182">    }</span>
+
+<span class="nc" id="L184">    @Override public void saveConfig() { plugin.saveConfig(); }</span>
+<span class="nc" id="L185">    @Override public void reloadConfig() { plugin.reloadConfig(); loadConfig(); }</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">    @Override public boolean isValidBorderSize(double size) { return size &gt; 0; }</span>
+
+    private String normalizeBorderCenterMode(String mode) {
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if (mode == null) return &quot;spawn&quot;;</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        return mode.trim().equalsIgnoreCase(&quot;fixed&quot;) ? &quot;fixed&quot; : &quot;spawn&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

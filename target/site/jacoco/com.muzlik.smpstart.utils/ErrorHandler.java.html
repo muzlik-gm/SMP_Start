@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ErrorHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.utils</a> &gt; <span class="el_source">ErrorHandler.java</span></div><h1>ErrorHandler.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.utils;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+
+/**
+ * Centralized error handling and logging utility
+ */
+public class ErrorHandler {
+    
+    private final SMPStartPlugin plugin;
+    
+<span class="nc" id="L14">    public ErrorHandler(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L15">        this.plugin = plugin;</span>
+<span class="nc" id="L16">    }</span>
+    
+    /**
+     * Handle an exception with context information
+     * @param context description of what was happening when the error occurred
+     * @param exception the exception that occurred
+     */
+    public void handleException(String context, Exception exception) {
+<span class="nc" id="L24">        plugin.getLogger().severe(&quot;Error in &quot; + context + &quot;: &quot; + exception.getMessage());</span>
+        
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        if (plugin.getConfig().getBoolean(&quot;debug&quot;, false)) {</span>
+<span class="nc" id="L27">            exception.printStackTrace();</span>
+        }
+<span class="nc" id="L29">    }</span>
+    
+    /**
+     * Log an informational message with context
+     * @param context the context or component
+     * @param message the message to log
+     */
+    public void logInfo(String context, String message) {
+<span class="nc" id="L37">        plugin.getLogger().info(&quot;[&quot; + context + &quot;] &quot; + message);</span>
+<span class="nc" id="L38">    }</span>
+    
+    /**
+     * Log a warning message with context
+     * @param context the context or component
+     * @param message the warning message
+     */
+    public void logWarning(String context, String message) {
+<span class="nc" id="L46">        plugin.getLogger().warning(&quot;[&quot; + context + &quot;] &quot; + message);</span>
+<span class="nc" id="L47">    }</span>
+    
+    /**
+     * Send an error message to a command sender
+     * @param sender the command sender
+     * @param message the error message
+     */
+    public void sendError(CommandSender sender, String message) {
+<span class="nc" id="L55">        sender.sendMessage(ChatColor.RED + &quot;[MSS Error] &quot; + message);</span>
+<span class="nc" id="L56">    }</span>
+    
+    /**
+     * Send a success message to a command sender
+     * @param sender the command sender
+     * @param message the success message
+     */
+    public void sendSuccess(CommandSender sender, String message) {
+<span class="nc" id="L64">        sender.sendMessage(ChatColor.GREEN + &quot;[MSS] &quot; + message);</span>
+<span class="nc" id="L65">    }</span>
+    
+    /**
+     * Send an info message to a command sender
+     * @param sender the command sender
+     * @param message the info message
+     */
+    public void sendInfo(CommandSender sender, String message) {
+<span class="nc" id="L73">        sender.sendMessage(ChatColor.YELLOW + &quot;[MSS] &quot; + message);</span>
+<span class="nc" id="L74">    }</span>
+    
+    /**
+     * Validate that an object is not null, throwing an exception if it is
+     * @param object the object to check
+     * @param name the name of the object for error messages
+     * @throws IllegalStateException if the object is null
+     */
+    public void requireNonNull(Object object, String name) {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L84">            throw new IllegalStateException(name + &quot; is null - initialization failed&quot;);</span>
+        }
+<span class="nc" id="L86">    }</span>
+    
+    /**
+     * Validate a configuration value is within acceptable bounds
+     * @param value the value to check
+     * @param min minimum acceptable value
+     * @param max maximum acceptable value
+     * @param name name of the configuration value
+     * @return true if valid, false otherwise
+     */
+    public boolean validateConfigValue(double value, double min, double max, String name) {
+<span class="nc bnc" id="L97" title="All 4 branches missed.">        if (value &lt; min || value &gt; max) {</span>
+<span class="nc" id="L98">            logWarning(&quot;Config Validation&quot;, name + &quot; value &quot; + value + &quot; is outside acceptable range [&quot; + min + &quot;, &quot; + max + &quot;]&quot;);</span>
+<span class="nc" id="L99">            return false;</span>
+        }
+<span class="nc" id="L101">        return true;</span>
+    }
+    
+    /**
+     * Handle a recoverable error by logging it and attempting to continue
+     * @param context description of what was happening
+     * @param error the error message
+     * @param fallbackAction description of the fallback action taken
+     */
+    public void handleRecoverableError(String context, String error, String fallbackAction) {
+<span class="nc" id="L111">        logWarning(context, error + &quot; - &quot; + fallbackAction);</span>
+<span class="nc" id="L112">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

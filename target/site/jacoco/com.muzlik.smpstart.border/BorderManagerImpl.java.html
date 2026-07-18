@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BorderManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.border</a> &gt; <span class="el_source">BorderManagerImpl.java</span></div><h1>BorderManagerImpl.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.border;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.WorldBorder;
+
+/**
+ * Implementation of BorderManager that handles world border operations
+ */
+public class BorderManagerImpl implements BorderManager {
+    
+    private final SMPStartPlugin plugin;
+    
+<span class="nc" id="L16">    public BorderManagerImpl(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L17">        this.plugin = plugin;</span>
+<span class="nc" id="L18">    }</span>
+    
+    @Override
+    public void setPreStartBorder() {
+        try {
+<span class="nc" id="L23">            double size = plugin.getConfigManager().getPreStartBorderSize();</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">            if (validateBorderSize(size)) {</span>
+<span class="nc" id="L25">                World world = getMainWorld();</span>
+<span class="nc bnc" id="L26" title="All 2 branches missed.">                if (world != null) {</span>
+<span class="nc" id="L27">                    WorldBorder border = world.getWorldBorder();</span>
+                    // Set border center based on configuration
+<span class="nc" id="L29">                    border.setCenter(getBorderCenter(world));</span>
+                    // Set border size
+<span class="nc" id="L31">                    border.setSize(size);</span>
+                    // Disable damage during countdown to prevent deaths
+<span class="nc" id="L33">                    border.setDamageAmount(plugin.getConfigManager().getPreStartBorderDamageAmount());</span>
+<span class="nc" id="L34">                    border.setDamageBuffer(plugin.getConfigManager().getPreStartBorderDamageBuffer());</span>
+<span class="nc" id="L35">                    plugin.getLogger().info(&quot;Set world border to pre-start size: &quot; + size + &quot; blocks (damage disabled)&quot;);</span>
+<span class="nc" id="L36">                } else {</span>
+<span class="nc" id="L37">                    plugin.getLogger().warning(&quot;Could not find main world for pre-start border&quot;);</span>
+                }
+<span class="nc" id="L39">            } else {</span>
+<span class="nc" id="L40">                plugin.getLogger().warning(&quot;Invalid pre-start border size: &quot; + size);</span>
+            }
+<span class="nc" id="L42">        } catch (Exception e) {</span>
+<span class="nc" id="L43">            plugin.getLogger().severe(&quot;Failed to set pre-start border: &quot; + e.getMessage());</span>
+<span class="nc" id="L44">        }</span>
+<span class="nc" id="L45">    }</span>
+    
+    @Override
+    public void transitionToFinalBorder() {
+        try {
+<span class="nc" id="L50">            double finalSize = plugin.getConfigManager().getFinalBorderSize();</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (validateBorderSize(finalSize)) {</span>
+<span class="nc" id="L52">                World world = getMainWorld();</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                if (world != null) {</span>
+<span class="nc" id="L54">                    WorldBorder border = world.getWorldBorder();</span>
+                    // Ensure border is centered based on configuration before transition
+<span class="nc" id="L56">                    border.setCenter(getBorderCenter(world));</span>
+                    // Re-enable border damage for the final border
+<span class="nc" id="L58">                    border.setDamageAmount(plugin.getConfigManager().getBorderDamageAmount());</span>
+<span class="nc" id="L59">                    border.setDamageBuffer(plugin.getConfigManager().getBorderDamageBuffer());</span>
+                    // Smooth transition over configured seconds
+<span class="nc" id="L61">                    int transitionSeconds = plugin.getConfigManager().getBorderTransitionSeconds();</span>
+<span class="nc" id="L62">                    border.setSize(finalSize, Math.max(0, transitionSeconds));</span>
+<span class="nc" id="L63">                    plugin.getLogger().info(&quot;Transitioning world border to final size: &quot; + finalSize + &quot; blocks (damage enabled)&quot;);</span>
+<span class="nc" id="L64">                } else {</span>
+<span class="nc" id="L65">                    plugin.getLogger().warning(&quot;Could not find main world for border transition&quot;);</span>
+                }
+<span class="nc" id="L67">            } else {</span>
+<span class="nc" id="L68">                plugin.getLogger().warning(&quot;Invalid final border size: &quot; + finalSize);</span>
+            }
+<span class="nc" id="L70">        } catch (Exception e) {</span>
+<span class="nc" id="L71">            plugin.getLogger().severe(&quot;Failed to transition to final border: &quot; + e.getMessage());</span>
+<span class="nc" id="L72">        }</span>
+<span class="nc" id="L73">    }</span>
+    
+    @Override
+    public boolean validateBorderSize(double size) {
+<span class="nc bnc" id="L77" title="All 4 branches missed.">        return size &gt; 0 &amp;&amp; size &lt;= 60000000; // Minecraft's maximum world border size</span>
+    }
+    
+    @Override
+    public double getCurrentBorderSize() {
+        try {
+<span class="nc" id="L83">            World world = getMainWorld();</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            if (world != null) {</span>
+<span class="nc" id="L85">                return world.getWorldBorder().getSize();</span>
+            }
+<span class="nc" id="L87">        } catch (Exception e) {</span>
+<span class="nc" id="L88">            plugin.getLogger().warning(&quot;Failed to get current border size: &quot; + e.getMessage());</span>
+<span class="nc" id="L89">        }</span>
+<span class="nc" id="L90">        return 0;</span>
+    }
+    
+    @Override
+    public void setBorderSize(double size) {
+        try {
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (validateBorderSize(size)) {</span>
+<span class="nc" id="L97">                World world = getMainWorld();</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                if (world != null) {</span>
+<span class="nc" id="L99">                    WorldBorder border = world.getWorldBorder();</span>
+                    // Ensure border is centered based on configuration
+<span class="nc" id="L101">                    border.setCenter(getBorderCenter(world));</span>
+<span class="nc" id="L102">                    border.setSize(size);</span>
+<span class="nc" id="L103">                    plugin.getLogger().info(&quot;Set world border size to: &quot; + size + &quot; blocks&quot;);</span>
+<span class="nc" id="L104">                } else {</span>
+<span class="nc" id="L105">                    plugin.getLogger().warning(&quot;Could not find main world for border setting&quot;);</span>
+                }
+<span class="nc" id="L107">            } else {</span>
+<span class="nc" id="L108">                plugin.getLogger().warning(&quot;Invalid border size: &quot; + size);</span>
+            }
+<span class="nc" id="L110">        } catch (Exception e) {</span>
+<span class="nc" id="L111">            plugin.getLogger().severe(&quot;Failed to set border size: &quot; + e.getMessage());</span>
+<span class="nc" id="L112">        }</span>
+<span class="nc" id="L113">    }</span>
+    
+    /**
+     * Get the main world (overworld)
+     * @return the main world, or null if not found
+     */
+    private World getMainWorld() {
+        // Prefer configured world if provided
+<span class="nc" id="L121">        String configuredWorld = plugin.getConfigManager().getWorldName();</span>
+<span class="nc bnc" id="L122" title="All 4 branches missed.">        if (configuredWorld != null &amp;&amp; !configuredWorld.trim().isEmpty()) {</span>
+<span class="nc" id="L123">            World world = Bukkit.getWorld(configuredWorld.trim());</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (world != null) {</span>
+<span class="nc" id="L125">                return world;</span>
+            }
+<span class="nc" id="L127">            plugin.getLogger().warning(&quot;Configured world not found: &quot; + configuredWorld + &quot;. Falling back to default world.&quot;);</span>
+        }
+        
+        // Try to get the default world first
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (!Bukkit.getWorlds().isEmpty()) {</span>
+<span class="nc" id="L132">            World world = Bukkit.getWorlds().get(0);</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            if (world != null) {</span>
+<span class="nc" id="L134">                return world;</span>
+            }
+        }
+        
+        // Fallback: try to find a world with environment NORMAL
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        for (World w : Bukkit.getWorlds()) {</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">            if (w.getEnvironment() == World.Environment.NORMAL) {</span>
+<span class="nc" id="L141">                return w;</span>
+            }
+<span class="nc" id="L143">        }</span>
+        
+<span class="nc" id="L145">        return null;</span>
+    }
+    
+    private Location getBorderCenter(World world) {
+<span class="nc" id="L149">        String mode = plugin.getConfigManager().getBorderCenterMode();</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (&quot;fixed&quot;.equalsIgnoreCase(mode)) {</span>
+<span class="nc" id="L151">            double x = plugin.getConfigManager().getBorderCenterX();</span>
+<span class="nc" id="L152">            double z = plugin.getConfigManager().getBorderCenterZ();</span>
+<span class="nc" id="L153">            return new Location(world, x, world.getSpawnLocation().getY(), z);</span>
+        }
+        
+<span class="nc" id="L156">        return world.getSpawnLocation();</span>
+    }
+    
+    @Override
+    public void initializeBorder() {
+        try {
+<span class="nc" id="L162">            plugin.getLogger().info(&quot;Starting border initialization...&quot;);</span>
+            
+            // Always set the pre-start border on initialization
+            // This ensures the border is correct when the plugin loads
+<span class="nc" id="L166">            double size = plugin.getConfigManager().getPreStartBorderSize();</span>
+<span class="nc" id="L167">            plugin.getLogger().info(&quot;Pre-start border size from config: &quot; + size);</span>
+            
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if (validateBorderSize(size)) {</span>
+<span class="nc" id="L170">                World world = getMainWorld();</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                plugin.getLogger().info(&quot;Found world for border initialization: &quot; + (world != null ? world.getName() : &quot;null&quot;));</span>
+                
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                if (world != null) {</span>
+<span class="nc" id="L174">                    WorldBorder border = world.getWorldBorder();</span>
+<span class="nc" id="L175">                    plugin.getLogger().info(&quot;Current border size before initialization: &quot; + border.getSize());</span>
+                    
+                    // Set border center based on configuration
+<span class="nc" id="L178">                    border.setCenter(getBorderCenter(world));</span>
+<span class="nc" id="L179">                    plugin.getLogger().info(&quot;Set border center to: &quot; + getBorderCenter(world));</span>
+                    
+                    // Set border size
+<span class="nc" id="L182">                    border.setSize(size);</span>
+<span class="nc" id="L183">                    plugin.getLogger().info(&quot;Set border size to: &quot; + size);</span>
+                    
+                    // Disable damage during pre-start phase
+<span class="nc" id="L186">                    border.setDamageAmount(plugin.getConfigManager().getPreStartBorderDamageAmount());</span>
+<span class="nc" id="L187">                    border.setDamageBuffer(plugin.getConfigManager().getPreStartBorderDamageBuffer());</span>
+<span class="nc" id="L188">                    plugin.getLogger().info(&quot;Disabled border damage&quot;);</span>
+                    
+<span class="nc" id="L190">                    plugin.getLogger().info(&quot;Successfully initialized world border to pre-start size: &quot; + size + &quot; blocks (damage disabled)&quot;);</span>
+<span class="nc" id="L191">                } else {</span>
+<span class="nc" id="L192">                    plugin.getLogger().warning(&quot;Could not find main world for border initialization. Available worlds: &quot; + Bukkit.getWorlds().size());</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                    for (World w : Bukkit.getWorlds()) {</span>
+<span class="nc" id="L194">                        plugin.getLogger().info(&quot;Available world: &quot; + w.getName() + &quot; (Environment: &quot; + w.getEnvironment() + &quot;)&quot;);</span>
+<span class="nc" id="L195">                    }</span>
+                }
+<span class="nc" id="L197">            } else {</span>
+<span class="nc" id="L198">                plugin.getLogger().warning(&quot;Invalid pre-start border size for initialization: &quot; + size);</span>
+            }
+<span class="nc" id="L200">        } catch (Exception e) {</span>
+<span class="nc" id="L201">            plugin.getLogger().severe(&quot;Failed to initialize border: &quot; + e.getMessage());</span>
+<span class="nc" id="L202">            e.printStackTrace();</span>
+<span class="nc" id="L203">        }</span>
+<span class="nc" id="L204">    }</span>
+    
+    @Override
+    public void setFinalBorder() {
+        try {
+<span class="nc" id="L209">            double size = plugin.getConfigManager().getFinalBorderSize();</span>
+<span class="nc" id="L210">            plugin.getLogger().info(&quot;Setting final border size: &quot; + size);</span>
+            
+<span class="nc bnc" id="L212" title="All 2 branches missed.">            if (validateBorderSize(size)) {</span>
+<span class="nc" id="L213">                World world = getMainWorld();</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                plugin.getLogger().info(&quot;Found world for final border: &quot; + (world != null ? world.getName() : &quot;null&quot;));</span>
+                
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                if (world != null) {</span>
+<span class="nc" id="L217">                    WorldBorder border = world.getWorldBorder();</span>
+<span class="nc" id="L218">                    plugin.getLogger().info(&quot;Current border size before setting final: &quot; + border.getSize());</span>
+                    
+                    // Set border center based on configuration
+<span class="nc" id="L221">                    border.setCenter(getBorderCenter(world));</span>
+<span class="nc" id="L222">                    plugin.getLogger().info(&quot;Set border center to: &quot; + getBorderCenter(world));</span>
+                    
+                    // Set border size to final size
+<span class="nc" id="L225">                    border.setSize(size);</span>
+<span class="nc" id="L226">                    plugin.getLogger().info(&quot;Set border size to final: &quot; + size);</span>
+                    
+                    // Enable border damage (SMP has started)
+<span class="nc" id="L229">                    border.setDamageAmount(plugin.getConfigManager().getBorderDamageAmount());</span>
+<span class="nc" id="L230">                    border.setDamageBuffer(plugin.getConfigManager().getBorderDamageBuffer());</span>
+<span class="nc" id="L231">                    plugin.getLogger().info(&quot;Enabled border damage for final border&quot;);</span>
+                    
+<span class="nc" id="L233">                    plugin.getLogger().info(&quot;Successfully set world border to final size: &quot; + size + &quot; blocks (damage enabled)&quot;);</span>
+<span class="nc" id="L234">                } else {</span>
+<span class="nc" id="L235">                    plugin.getLogger().warning(&quot;Could not find main world for final border setup&quot;);</span>
+                }
+<span class="nc" id="L237">            } else {</span>
+<span class="nc" id="L238">                plugin.getLogger().warning(&quot;Invalid final border size: &quot; + size);</span>
+            }
+<span class="nc" id="L240">        } catch (Exception e) {</span>
+<span class="nc" id="L241">            plugin.getLogger().severe(&quot;Failed to set final border: &quot; + e.getMessage());</span>
+<span class="nc" id="L242">            e.printStackTrace();</span>
+<span class="nc" id="L243">        }</span>
+<span class="nc" id="L244">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

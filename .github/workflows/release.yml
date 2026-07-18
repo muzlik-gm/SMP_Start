@@ -1,4 +1,4 @@
-name: Production Release
+name: Production Release & CI
 
 on:
   push:
@@ -8,69 +8,69 @@ on:
     inputs:
       create_release:
         description: 'Create GitHub Release'
-        required: false
-        default: 'true'
-      version:
-        description: 'Version to release (e.g., 1.0.1)'
         required: true
+        type: boolean
+        default: true
+      version:
+        description: 'Version to release (must match pom.xml)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+  checks: write
 
 env:
   MAVEN_OPTS: "-Xmx2g -XX:MaxMetaspaceSize=512m"
 
 jobs:
-  # Job 1: Validate and prepare
-  validate:
-    name: Validate Version & Setup
+  validate-version:
+    name: Validate Version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
-      version_changed: ${{ steps.check_version.outputs.changed }}
-      pom_version: ${{ steps.get_pom_version.outputs.pom_version }}
+      version: ${{ steps.get-version.outputs.version }}
+      tag_version: ${{ steps.get-tag-version.outputs.tag_version }}
+      version_changed: ${{ steps.check-version.outputs.changed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'maven'
+          cache: maven
 
-      - name: Get version from tag or input
-        id: get_version
+      - name: Get version from pom.xml
+        id: get-version
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-          else
-            VERSION="${{ github.event.inputs.version }}"
-          fi
-          
-          if [[ -z "$VERSION" ]]; then
-            echo "Error: No version provided"
-            exit 1
-          fi
-          
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Using version: $VERSION"
+          echo "Version from pom.xml: $VERSION"
 
-      - name: Get current POM version
-        id: get_pom_version
+      - name: Get tag version (if triggered by tag)
+        id: get-tag-version
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "pom_version=$POM_VERSION" >> $GITHUB_OUTPUT
-          echo "Current POM version: $POM_VERSION"
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+          echo "Tag version: $TAG_VERSION"
 
       - name: Check if version changed
-        id: check_version
+        id: check-version
         run: |
-          TAG_VERSION="${{ steps.get_version.outputs.version }}"
-          POM_VERSION="${{ steps.get_pom_version.outputs.pom_version }}"
+          TAG_VERSION="${{ steps.get-version.outputs.version }}"
+          POM_VERSION="${{ steps.get-version.outputs.version }}"
           
-          if [[ "$TAG_VERSION" != "$POM_VERSION" ]]; then
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            TAG_VERSION="${{ steps.get-tag-version.outputs.tag_version }}"
+          fi
+          
+          if [ "$TAG_VERSION" != "$POM_VERSION" ]; then
             echo "Version mismatch: Tag=$TAG_VERSION, POM=$POM_VERSION"
             echo "changed=true" >> $GITHUB_OUTPUT
           else
@@ -78,22 +78,20 @@ jobs:
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Fail if versions don't match (for tag pushes)
-        if: github.event_name == 'push' && steps.check_version.outputs.changed == 'true'
+      - name: Validate version match (for tag pushes)
+        if: github.event_name == 'push' && steps.check-version.outputs.changed == 'true'
         run: |
           echo "::error::Version mismatch detected!"
-          echo "Tag version: ${{ steps.get_version.outputs.version }}"
-          echo "POM version: ${{ steps.get_pom_version.outputs.pom_version }}"
-          echo "Please update pom.xml version to match the tag."
+          echo "Tag version: ${{ steps.get-tag-version.outputs.tag_version }}"
+          echo "POM version: ${{ steps.get-version.outputs.version }}"
           exit 1
 
-  # Job 2: Build and Test
-  build:
+  build-and-test:
     name: Build & Test
+    needs: validate-version
     runs-on: ubuntu-latest
-    needs: validate
     outputs:
-      artifact_path: ${{ steps.upload.outputs.artifact_path }}
+      version: ${{ needs.validate-version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -105,7 +103,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'maven'
+          cache: maven
 
       - name: Verify Maven version
         run: mvn --version
@@ -126,165 +124,239 @@ jobs:
         run: |
           ls -la target/*.jar
           echo "--- Checking main JAR ---"
-          jar tf target/muzlik-smp-start-${{ needs.validate.outputs.version }}.jar | head -20
+          jar tf target/muzlik-smp-start-${{ needs.validate-version.outputs.version }}.jar | head -20
           echo "--- Checking sources JAR ---"
-          jar tf target/muzlik-smp-start-${{ needs.validate.outputs.version }}-sources.jar | head -10 || true
+          jar tf target/muzlik-smp-start-${{ needs.validate-version.outputs.version }}-sources.jar | head -10 || true
           echo "--- Checking javadoc JAR ---"
-          jar tf target/muzlik-smp-start-${{ needs.validate.outputs.version }}-javadoc.jar | head -10 || true
+          jar tf target/muzlik-smp-start-${{ needs.validate-version.outputs.version }}-javadoc.jar | head -10 || true
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
-        id: upload
         with:
-          name: release-artifacts-${{ needs.validate.outputs.version }}
+          name: compiled-jars
           path: |
-            target/muzlik-smp-start-${{ needs.validate.outputs.version }}.jar
-            target/muzlik-smp-start-${{ needs.validate.outputs.version }}-sources.jar
-            target/muzlik-smp-start-${{ needs.validate.outputs.version }}-javadoc.jar
-            target/site/jacoco/jacoco.xml
-            target/site/jacoco/index.html
+            target/muzlik-smp-start-${{ needs.validate-version.outputs.version }}.jar
           retention-days: 30
-          if-no-files-found: error
+
+      - name: Upload sources and javadoc
+        uses: actions/upload-artifact@v4
+        with:
+          name: sources-javadoc-jars
+          path: |
+            target/muzlik-smp-start-${{ needs.validate-version.outputs.version }}-sources.jar
+            target/muzlik-smp-start-${{ needs.validate-version.outputs.version }}-javadoc.jar
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: target/surefire-reports/
+          retention-days: 7
 
       - name: Upload JaCoCo coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-report-${{ needs.validate.outputs.version }}
+          name: coverage-report
           path: target/site/jacoco/
           retention-days: 30
 
-  # Job 3: Create GitHub Release
-  release:
-    name: Create GitHub Release
+  static-analysis:
+    name: Static Analysis
+    needs: [validate-version, build-and-test]
     runs-on: ubuntu-latest
-    needs: [validate, build]
-    permissions:
-      contents: write
-      packages: write
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true' || github.event_name == 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          name: release-artifacts-${{ needs.validate.outputs.version }}
-          path: ./release-artifacts
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
 
-      - name: List downloaded artifacts
-        run: ls -la ./release-artifacts
+      - name: Run SpotBugs
+        run: mvn spotbugs:check -B -Pproduction || echo "SpotBugs found issues (non-blocking)"
+
+      - name: Run PMD
+        run: mvn pmd:check -B -Pproduction || echo "PMD found issues (non-blocking)"
+
+      - name: Run Checkstyle
+        run: mvn checkstyle:check -B -Pproduction || echo "Checkstyle found issues (non-blocking)"
+
+      - name: Upload analysis reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-reports
+          path: |
+            target/spotbugsXml.xml
+            target/pmd.xml
+            target/checkstyle-result.xml
+          retention-days: 7
+          if-no-files-found: ignore
+
+  generate-release-notes:
+    name: Generate Release Notes
+    needs: [validate-version, build-and-test]
+    runs-on: ubuntu-latest
+    outputs:
+      release_body: ${{ steps.generate-notes.outputs.notes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Generate release notes
-        id: generate_notes
-        uses: actions/github-script@v7
-        env:
-          VERSION: ${{ needs.validate.outputs.version }}
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            
-            // Get commit history since last release
-            let commitLog = '';
-            try {
-              const lastRelease = execSync('git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
-              if (lastRelease) {
-                commitLog = execSync('git log ' + lastRelease + '..HEAD --pretty=format:"- %s (%h)"', { encoding: 'utf8' });
-              } else {
-                commitLog = execSync('git log --pretty=format:"- %s (%h)"', { encoding: 'utf8' });
-              }
-            } catch (e) {
-              commitLog = execSync('git log --pretty=format:"- %s (%h)" -10', { encoding: 'utf8' });
-            }
-            
-            // Get contributors
-            let contributors = '';
-            try {
-              contributors = execSync('git log --format="%an" | sort -u | tr "\\n" ", " | sed "s/, $//"', { encoding: 'utf8' });
-            } catch (e) {
-              contributors = 'Contributors';
-            }
-            
-            const version = process.env.VERSION;
-            const releaseNotes = [
-              '## 🚀 SMP Start Plugin v' + version,
-              '',
-              '### 📦 What\'s Included',
-              '- Main plugin JAR (`muzlik-smp-start-' + version + '.jar`)',
-              '- Sources JAR for developers',
-              '- Javadoc JAR for API documentation',
-              '',
-              '### 📝 Changes',
-              (commitLog || '- Initial release'),
-              '',
-              '### 👥 Contributors',
-              contributors,
-              '',
-              '### 📊 Build Information',
-              '- Java Version: 17',
-              '- Maven Build: Production Profile',
-              '- Tests: All Passed',
-              '- Code Coverage: Generated via JaCoCo',
-              '',
-              '### 🔧 Installation',
-              '1. Download `muzlik-smp-start-' + version + '.jar`',
-              '2. Place in your server\'s `plugins/` directory',
-              '3. Restart your Minecraft server',
-              '4. Configure via `plugins/SMPStart/config.yml`',
-              '',
-              '---',
-              '*Automatically generated release by GitHub Actions*'
-            ].join('\n');
+        id: generate-notes
+        shell: bash
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --max-count=20)
+          fi
+          
+          # Get contributors
+          CONTRIBUTORS=$(git log --format="%an" | sort -u | tr '\n' ', ' | sed 's/, $//')
+          
+          # Count changes
+          FEATURES=$(echo "$COMMITS" | grep -iE "feat|add|new" | wc -l || echo "0")
+          FIXES=$(echo "$COMMITS" | grep -iE "fix|bug|patch" | wc -l || echo "0")
+          OTHERS=$(echo "$COMMITS" | grep -viE "feat|add|new|fix|bug|patch" | wc -l || echo "0")
+          
+          # Create release notes file
+          {
+            echo "## 🚀 SMP Starter v${VERSION}"
+            echo ""
+            echo "### 📊 Summary"
+            echo "- **Features**: ${FEATURES}"
+            echo "- **Fixes**: ${FIXES}"
+            echo "- **Other Changes**: ${OTHERS}"
+            echo ""
+            echo "### 📦 What's Included"
+            echo "- Main plugin JAR"
+            echo "- Sources JAR for developers"
+            echo "- Javadoc JAR for API documentation"
+            echo ""
+            echo "### 🔄 Changes"
+            if [ -n "$COMMITS" ]; then
+              echo "$COMMITS"
+            else
+              echo "- Initial release"
+            fi
+            echo ""
+            echo "### 👥 Contributors"
+            echo "${CONTRIBUTORS}"
+            echo ""
+            echo "### 📊 Build Information"
+            echo "- Java Version: 17"
+            echo "- Maven Build: Production Profile"
+            echo "- Tests: All Passed"
+            echo "- Code Coverage: Generated via JaCoCo"
+            echo ""
+            echo "### 🔧 Installation"
+            echo "1. Download the main JAR file"
+            echo "2. Place in your server's plugins/ directory"
+            echo "3. Restart your Minecraft server"
+            echo "4. Configure via plugins/SMPStart/config.yml"
+            echo ""
+            echo "---"
+            echo "*Automatically generated release by GitHub Actions*"
+          } > ./release-notes.md
+          
+          echo "Release notes generated successfully"
+          cat ./release-notes.md
+          
+          # Output the content for use in other steps (base64 encoded)
+          NOTES=$(base64 -w 0 < ./release-notes.md)
+          echo "notes=$NOTES" >> $GITHUB_OUTPUT
 
-            core.setOutput('notes', releaseNotes);
+  create-release:
+    name: Create GitHub Release
+    needs: [validate-version, build-and-test, static-analysis, generate-release-notes]
+    if: github.event_name == 'workflow_dispatch' && inputs.create_release == true || startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download compiled JARs
+        uses: actions/download-artifact@v4
+        with:
+          name: compiled-jars
+          path: ./release-assets
+
+      - name: Download sources and javadoc
+        uses: actions/download-artifact@v4
+        with:
+          name: sources-javadoc-jars
+          path: ./release-assets
+
+      - name: List release assets
+        run: ls -la ./release-assets/
+
+      - name: Decode release notes
+        run: |
+          echo "${{ needs.generate-release-notes.outputs.release_body }}" | base64 -d > ./release-notes.md
+          cat ./release-notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.validate.outputs.version }}
-          name: SMP Start Plugin v${{ needs.validate.outputs.version }}
-          body: ${{ steps.generate_notes.outputs.notes }}
+          tag_name: v${{ needs.validate-version.outputs.version }}
+          name: SMP Starter v${{ needs.validate-version.outputs.version }}
+          body_path: ./release-notes.md
+          files: |
+            ./release-assets/*.jar
           draft: false
           prerelease: false
-          files: |
-            ./release-artifacts/muzlik-smp-start-${{ needs.validate.outputs.version }}.jar
-            ./release-artifacts/muzlik-smp-start-${{ needs.validate.outputs.version }}-sources.jar
-            ./release-artifacts/muzlik-smp-start-${{ needs.validate.outputs.version }}-javadoc.jar
-          generate_release_notes: false
-          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update release if version unchanged
-        if: needs.validate.outputs.version_changed == 'true'
+      - name: Note about version updates
+        if: needs.validate-version.outputs.version_changed == 'true'
         run: |
           echo "Note: If the version in pom.xml was updated after tag creation,"
           echo "this release will contain the updated artifacts."
           echo "Consider creating a new tag if significant changes were made."
 
-  # Job 4: Post-release validation
-  post_release:
+  post-release-validation:
     name: Post-Release Validation
-    runs-on: ubuntu-latest
-    needs: [validate, build, release]
+    needs: [validate-version, build-and-test, static-analysis, create-release]
     if: always()
+    runs-on: ubuntu-latest
     steps:
-      - name: Check previous job results
+      - name: Check job results
         run: |
-          echo "Validate: ${{ needs.validate.result }}"
-          echo "Build: ${{ needs.build.result }}"
-          echo "Release: ${{ needs.release.result }}"
-          
-          if [[ "${{ needs.build.result }}" != "success" ]] || [[ "${{ needs.release.result }}" != "success" && "${{ needs.release.result }}" != "skipped" ]]; then
-            echo "::error::Release pipeline had failures!"
+          echo "Validate: ${{ needs.validate-version.result }}"
+          echo "Build: ${{ needs.build-and-test.result }}"
+          echo "Static Analysis: ${{ needs.static-analysis.result }}"
+          echo "Release: ${{ needs.create-release.result }}"
+
+          if [ "${{ needs.build-and-test.result }}" != "success" ]; then
+            echo "::error::Build failed!"
             exit 1
           fi
-          
-          echo "✅ Release completed successfully!"
 
-      - name: Cleanup old artifacts (optional)
+          if [ "${{ needs.create-release.result }}" != "success" ] && [ "${{ needs.create-release.result }}" != "skipped" ]; then
+            echo "::error::Release creation failed!"
+            exit 1
+          fi
+
+          echo "✅ Release pipeline completed successfully!"
+
+      - name: Cleanup old artifacts
         uses: geekyeggo/delete-artifact@v4
         with:
           name: release-artifacts-*

@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EffectSystemImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SMP Start Plugin</a> &gt; <a href="index.source.html" class="el_package">com.muzlik.smpstart.effects</a> &gt; <span class="el_source">EffectSystemImpl.java</span></div><h1>EffectSystemImpl.java</h1><pre class="source lang-java linenums">package com.muzlik.smpstart.effects;
+
+import com.muzlik.smpstart.SMPStartPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Sound;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.entity.Player;
+
+/**
+ * Implementation of EffectSystem that handles audio-visual effects
+ */
+public class EffectSystemImpl implements EffectSystem {
+    
+    private final SMPStartPlugin plugin;
+    private BossBar countdownBossBar;
+    
+<span class="nc" id="L20">    public EffectSystemImpl(SMPStartPlugin plugin) {</span>
+<span class="nc" id="L21">        this.plugin = plugin;</span>
+<span class="nc" id="L22">    }</span>
+    
+    @Override
+    public void playCountdownTick(int remaining) {
+        try {
+            // Play different sounds based on remaining time
+            Sound sound;
+            float pitch;
+            
+<span class="nc bnc" id="L31" title="All 2 branches missed.">            if (remaining &lt;= 3) {</span>
+                // High-pitched urgent sound for final countdown
+<span class="nc" id="L33">                sound = Sound.BLOCK_NOTE_BLOCK_PLING;</span>
+<span class="nc" id="L34">                pitch = 2.0f;</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">            } else if (remaining &lt;= 5) {</span>
+                // Medium-pitched sound for approaching end
+<span class="nc" id="L37">                sound = Sound.BLOCK_NOTE_BLOCK_PLING;</span>
+<span class="nc" id="L38">                pitch = 1.5f;</span>
+            } else {
+                // Normal countdown sound
+<span class="nc" id="L41">                sound = Sound.BLOCK_NOTE_BLOCK_PLING;</span>
+<span class="nc" id="L42">                pitch = 1.0f;</span>
+            }
+            
+            // Play sound to all players
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L47">                player.playSound(player.getLocation(), sound, 1.0f, pitch);</span>
+<span class="nc" id="L48">            }</span>
+<span class="nc" id="L49">        } catch (Exception e) {</span>
+<span class="nc" id="L50">            plugin.getLogger().warning(&quot;Failed to play countdown tick sound: &quot; + e.getMessage());</span>
+<span class="nc" id="L51">        }</span>
+<span class="nc" id="L52">    }</span>
+    
+    @Override
+    public void playStartSound() {
+        try {
+            // Play totem pop sound when SMP starts
+<span class="nc" id="L58">            Sound sound = Sound.ITEM_TOTEM_USE;</span>
+            
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L61">                player.playSound(player.getLocation(), sound, 1.0f, 1.0f);</span>
+<span class="nc" id="L62">            }</span>
+<span class="nc" id="L63">        } catch (Exception e) {</span>
+<span class="nc" id="L64">            plugin.getLogger().warning(&quot;Failed to play start sound: &quot; + e.getMessage());</span>
+<span class="nc" id="L65">        }</span>
+<span class="nc" id="L66">    }</span>
+    
+    @Override
+    public void playTotemPopSound() {
+        try {
+            // Play totem pop sound when cooldown expires
+<span class="nc" id="L72">            Sound sound = Sound.ITEM_TOTEM_USE;</span>
+            
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L75">                player.playSound(player.getLocation(), sound, 1.0f, 1.0f);</span>
+<span class="nc" id="L76">            }</span>
+<span class="nc" id="L77">        } catch (Exception e) {</span>
+<span class="nc" id="L78">            plugin.getLogger().warning(&quot;Failed to play totem pop sound: &quot; + e.getMessage());</span>
+<span class="nc" id="L79">        }</span>
+<span class="nc" id="L80">    }</span>
+    
+    @Override
+    public void showCountdownTitle(int remaining) {
+        try {
+            String title;
+            String subtitle;
+            ChatColor color;
+            
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            if (remaining &lt;= 3) {</span>
+<span class="nc" id="L90">                color = ChatColor.RED;</span>
+<span class="nc" id="L91">                title = color + &quot;&quot; + ChatColor.BOLD + remaining;</span>
+<span class="nc" id="L92">                subtitle = ChatColor.YELLOW + &quot;GET READY!&quot;;</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            } else if (remaining &lt;= 5) {</span>
+<span class="nc" id="L94">                color = ChatColor.YELLOW;</span>
+<span class="nc" id="L95">                title = color + &quot;&quot; + ChatColor.BOLD + remaining;</span>
+<span class="nc" id="L96">                subtitle = ChatColor.WHITE + &quot;SMP Starting Soon...&quot;;</span>
+            } else {
+<span class="nc" id="L98">                color = ChatColor.GREEN;</span>
+<span class="nc" id="L99">                title = color + &quot;&quot; + ChatColor.BOLD + remaining;</span>
+<span class="nc" id="L100">                subtitle = ChatColor.GRAY + &quot;SMP Starting in...&quot;;</span>
+            }
+            
+            // Show title to all players
+<span class="nc bnc" id="L104" title="All 2 branches missed.">            for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L105">                player.sendTitle(title, subtitle, 5, 15, 5); // fadeIn, stay, fadeOut in ticks</span>
+<span class="nc" id="L106">            }</span>
+<span class="nc" id="L107">        } catch (Exception e) {</span>
+<span class="nc" id="L108">            plugin.getLogger().warning(&quot;Failed to show countdown title: &quot; + e.getMessage());</span>
+<span class="nc" id="L109">        }</span>
+<span class="nc" id="L110">    }</span>
+    
+    @Override
+    public void showStartAnimation() {
+        try {
+<span class="nc" id="L115">            String title = ChatColor.GOLD + &quot;&quot; + ChatColor.BOLD + &quot;SMP STARTED!&quot;;</span>
+<span class="nc" id="L116">            String subtitle = ChatColor.GREEN + &quot;Good luck, have fun!&quot;;</span>
+            
+            // Show start animation to all players
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc" id="L120">                player.sendTitle(title, subtitle, 10, 40, 10); // Longer display for start</span>
+<span class="nc" id="L121">            }</span>
+<span class="nc" id="L122">        } catch (Exception e) {</span>
+<span class="nc" id="L123">            plugin.getLogger().warning(&quot;Failed to show start animation: &quot; + e.getMessage());</span>
+<span class="nc" id="L124">        }</span>
+<span class="nc" id="L125">    }</span>
+    
+    @Override
+    public void broadcastCountdownMessage(int remaining) {
+        try {
+            String message;
+            ChatColor color;
+            
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            if (remaining &lt;= 3) {</span>
+<span class="nc" id="L134">                color = ChatColor.RED;</span>
+<span class="nc" id="L135">                message = color + &quot;&quot; + ChatColor.BOLD + &quot;[MSS] &quot; + remaining + &quot;s!&quot;;</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            } else if (remaining &lt;= 10) {</span>
+<span class="nc" id="L137">                color = ChatColor.YELLOW;</span>
+<span class="nc" id="L138">                message = color + &quot;[MSS] Starting in &quot; + remaining + &quot;s...&quot;;</span>
+            } else {
+<span class="nc" id="L140">                color = ChatColor.GREEN;</span>
+<span class="nc" id="L141">                message = color + &quot;[MSS] Starting in &quot; + remaining + &quot;s&quot;;</span>
+            }
+            
+            // Broadcast to all players
+<span class="nc" id="L145">            Bukkit.broadcastMessage(message);</span>
+<span class="nc" id="L146">        } catch (Exception e) {</span>
+<span class="nc" id="L147">            plugin.getLogger().warning(&quot;Failed to broadcast countdown message: &quot; + e.getMessage());</span>
+<span class="nc" id="L148">        }</span>
+<span class="nc" id="L149">    }</span>
+    
+    @Override
+    public void broadcastStartMessage() {
+        try {
+<span class="nc" id="L154">            String message = ChatColor.GOLD + &quot;&quot; + ChatColor.BOLD + &quot;[MSS] &quot; +</span>
+                           ChatColor.GREEN + &quot;The SMP has officially started! Good luck everyone!&quot;;
+            
+            // Broadcast to all players
+<span class="nc" id="L158">            Bukkit.broadcastMessage(message);</span>
+<span class="nc" id="L159">        } catch (Exception e) {</span>
+<span class="nc" id="L160">            plugin.getLogger().warning(&quot;Failed to broadcast start message: &quot; + e.getMessage());</span>
+<span class="nc" id="L161">        }</span>
+<span class="nc" id="L162">    }</span>
+    
+    @Override
+    public void updateCountdownBossBar(int remaining, int totalSeconds) {
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (!plugin.getConfigManager().isCountdownBossBarEnabled()) {</span>
+<span class="nc" id="L167">            clearCountdownBossBar();</span>
+<span class="nc" id="L168">            return;</span>
+        }
+        
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (totalSeconds &lt;= 0) {</span>
+<span class="nc" id="L172">            return;</span>
+        }
+        
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (countdownBossBar == null) {</span>
+<span class="nc" id="L176">            countdownBossBar = Bukkit.createBossBar(&quot;&quot;, BarColor.GREEN, BarStyle.SOLID);</span>
+<span class="nc" id="L177">            countdownBossBar.setVisible(true);</span>
+        }
+        
+<span class="nc" id="L180">        double progress = Math.max(0.0, Math.min(1.0, (double) remaining / totalSeconds));</span>
+<span class="nc" id="L181">        countdownBossBar.setProgress(progress);</span>
+        
+        BarColor color;
+        String title;
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        if (remaining &lt;= 3) {</span>
+<span class="nc" id="L186">            color = BarColor.RED;</span>
+<span class="nc" id="L187">            title = ChatColor.RED + &quot;&quot; + ChatColor.BOLD + &quot;Starting in &quot; + remaining + &quot;s&quot;;</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        } else if (remaining &lt;= 5) {</span>
+<span class="nc" id="L189">            color = BarColor.YELLOW;</span>
+<span class="nc" id="L190">            title = ChatColor.YELLOW + &quot;Starting in &quot; + remaining + &quot;s&quot;;</span>
+        } else {
+<span class="nc" id="L192">            color = BarColor.GREEN;</span>
+<span class="nc" id="L193">            title = ChatColor.GREEN + &quot;Starting in &quot; + remaining + &quot;s&quot;;</span>
+        }
+        
+<span class="nc" id="L196">        countdownBossBar.setColor(color);</span>
+<span class="nc" id="L197">        countdownBossBar.setTitle(title);</span>
+        
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        for (Player player : Bukkit.getOnlinePlayers()) {</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            if (!countdownBossBar.getPlayers().contains(player)) {</span>
+<span class="nc" id="L201">                countdownBossBar.addPlayer(player);</span>
+            }
+<span class="nc" id="L203">        }</span>
+<span class="nc" id="L204">    }</span>
+    
+    @Override
+    public void clearCountdownBossBar() {
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (countdownBossBar != null) {</span>
+<span class="nc" id="L209">            countdownBossBar.removeAll();</span>
+<span class="nc" id="L210">            countdownBossBar.setVisible(false);</span>
+<span class="nc" id="L211">            countdownBossBar = null;</span>
+        }
+<span class="nc" id="L213">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
