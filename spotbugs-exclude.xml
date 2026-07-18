@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude test code -->
+    <Match>
+        <Class name="~.*Test.*"/>
+    </Match>
+    <Match>
+        <Class name="~.*Tests.*"/>
+    </Match>
+    <!-- Exclude Bukkit-specific patterns -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>
