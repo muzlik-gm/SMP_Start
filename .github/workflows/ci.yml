@@ -40,7 +40,7 @@ jobs:
         run: mvn test -B -V
 
       - name: Generate code coverage report
-        run: mvn jacoco:report -B
+        run: mvn org.jacoco:jacoco-maven-plugin:report -B
 
       - name: Package JAR (skip static analysis for CI speed)
         run: mvn package -B -DskipTests -Pci
