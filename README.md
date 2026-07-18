@@ -1,7 +1,6 @@
 <div align="center">
 
-# 🚀 SMP Starter
-### The Ultimate Coordinated SMP Launch System for Minecraft
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Black+Ops+One&size=45&duration=3000&pause=1000&color=3498DB&center=true&vCenter=true&width=900&height=60&lines=SMP+STARTER;Ultimate+SMP+Launch+System;Cinematic+Countdowns+%26+Dynamic+Borders)](https://git.io/typing-svg)
 
 [![Release](https://img.shields.io/github/v/release/muzlik-gm/SMP_Start?color=2ecc71&logo=github&style=for-the-badge)](https://github.com/muzlik-gm/SMP_Start/releases)
 [![Downloads](https://img.shields.io/github/downloads/muzlik-gm/SMP_Start/total?color=3498db&logo=github&style=for-the-badge)](https://github.com/muzlik-gm/SMP_Start/releases)
