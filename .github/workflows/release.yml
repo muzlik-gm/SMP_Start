@@ -191,7 +191,7 @@ jobs:
             try {
               const lastRelease = execSync('git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
               if (lastRelease) {
-                commitLog = execSync(`git log ${lastRelease}..HEAD --pretty=format:"- %s (%h)"`, { encoding: 'utf8' });
+                commitLog = execSync('git log ' + lastRelease + '..HEAD --pretty=format:"- %s (%h)"', { encoding: 'utf8' });
               } else {
                 commitLog = execSync('git log --pretty=format:"- %s (%h)"', { encoding: 'utf8' });
               }
@@ -207,33 +207,36 @@ jobs:
               contributors = 'Contributors';
             }
             
-            const releaseNotes = `## 🚀 SMP Start Plugin v${process.env.VERSION}
-
-### 📦 What's Included
-- Main plugin JAR (\`muzlik-smp-start-${process.env.VERSION}.jar\`)
-- Sources JAR for developers
-- Javadoc JAR for API documentation
-
-### 📝 Changes
-${commitLog || '- Initial release'}
-
-### 👥 Contributors
-${contributors}
-
-### 📊 Build Information
-- Java Version: 17
-- Maven Build: Production Profile
-- Tests: All Passed
-- Code Coverage: Generated via JaCoCo
-
-### 🔧 Installation
-1. Download \`muzlik-smp-start-${process.env.VERSION}.jar\`
-2. Place in your server's \`plugins/\` directory
-3. Restart your Minecraft server
-4. Configure via \`plugins/SMPStart/config.yml\`
-
----
-*Automatically generated release by GitHub Actions*`;
+            const version = process.env.VERSION;
+            const releaseNotes = [
+              '## 🚀 SMP Start Plugin v' + version,
+              '',
+              '### 📦 What\'s Included',
+              '- Main plugin JAR (`muzlik-smp-start-' + version + '.jar`)',
+              '- Sources JAR for developers',
+              '- Javadoc JAR for API documentation',
+              '',
+              '### 📝 Changes',
+              (commitLog || '- Initial release'),
+              '',
+              '### 👥 Contributors',
+              contributors,
+              '',
+              '### 📊 Build Information',
+              '- Java Version: 17',
+              '- Maven Build: Production Profile',
+              '- Tests: All Passed',
+              '- Code Coverage: Generated via JaCoCo',
+              '',
+              '### 🔧 Installation',
+              '1. Download `muzlik-smp-start-' + version + '.jar`',
+              '2. Place in your server\'s `plugins/` directory',
+              '3. Restart your Minecraft server',
+              '4. Configure via `plugins/SMPStart/config.yml`',
+              '',
+              '---',
+              '*Automatically generated release by GitHub Actions*'
+            ].join('\n');
 
             core.setOutput('notes', releaseNotes);
 
