@@ -1,3 +1,98 @@
-# GitHub workflow files
-.github/workflows/ci.yml
-.github/workflows/release.yml
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Compiled Class Files
+**/*.class
+**/*.jar
+**/*.war
+**/*.ear
+**/*.nar
+!src/**
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.classpath
+.project
+.settings/
+bin/
+.vscode/
+*.code-workspace
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+*~
+
+# Server Artifacts
+logs/
+*.log
+crash-reports/
+server.properties
+banned-players.json
+banned-ips.json
+ops.json
+whitelist.json
+usercache.json
+*.uuid
+world/
+world_nether/
+world_the_end/
+plugins/SMPStart/*.yml
+plugins/SMPStart/*.db
+plugins/SMPStart/*.json
+
+# Documentation & Coverage
+javadoc/
+site/
+coverage/
+jacoco.exec
+.jacocoagent.jar
+
+# Temp Files
+tmp/
+temp/
+.cache/
+*.swp
+*.swo
+*.bak
+*.old
+
+# Secrets
+.keystore
+.jks
+*.p12
+*.pfx
+secrets/
+.env
+.env.local
+application-secret.yml
+
+# Agent Folders
+.kiro/
+.playwright-mcp/
+.agent/
