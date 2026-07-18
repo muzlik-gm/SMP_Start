@@ -1,8 +1,20 @@
-# Muzlik's SMP Starter
+<div align="center">
 
-A coordinated launch system for Minecraft SMP servers with balanced early-game defaults, phase-based safety, and deep customization.
+![SMP Starter Banner](https://readme-typing-svg.demolab.com?font=Fira+Code&size=30&duration=3000&pause=1000&color=38bdf8&center=true&vCenter=true&width=600&lines=___+__+_____+____+__+__+_____+____;SMP+STARTER;Ultimate+SMP+Launch+System)
 
-## Features
+[![GitHub release](https://img.shields.io/github/v/release/muzlik-gm/SMP_Start?style=for-the-badge&logo=github&color=blue)](https://github.com/muzlik-gm/SMP_Start/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/muzlik-gm/SMP_Start/ci.yml?style=for-the-badge&logo=github-actions&label=Build)](https://github.com/muzlik-gm/SMP_Start/actions)
+[![License](https://img.shields.io/github/license/muzlik-gm/SMP_Start?style=for-the-badge&logo=github&color=green)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-17+-orange?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.19+-brightgreen?style=for-the-badge&logo=minecraft&logoColor=white)](https://www.minecraft.net/)
+
+*A coordinated launch system for Minecraft SMP servers with balanced early-game defaults, phase-based safety, and deep customization.*
+
+</div>
+
+---
+
+## ✨ Features
 
 - **Countdown System**: Multi-second countdown with audio and visual effects
 - **Countdown Boss Bar**: On-screen countdown progress bar
@@ -17,9 +29,11 @@ A coordinated launch system for Minecraft SMP servers with balanced early-game d
 - **Minimum Player Gate**: Require a minimum number of players to start
 - **Cooldown System**: Prevents spam usage of the start command
 
-## Commands
+---
 
-All commands are under the `/smp` root. Aliases: `/smpstart`, `/msmp`.
+## 🎮 Commands
+
+*All commands are under the `/smp` root. Aliases: `/smpstart`, `/msmp`.*
 
 ### `/smp start`
 Starts the SMP countdown sequence.
@@ -68,7 +82,9 @@ View or change a configuration setting. Use `/smp config` with no arguments in-g
 ### `/smp help`
 Shows the full command list.
 
-## Permissions
+---
+
+## 🔐 Permissions
 
 | Permission | Description |
 | --- | --- |
@@ -80,14 +96,18 @@ Shows the full command list.
 | `smpstart.reset` | Reset SMP to pre-start state |
 | `smpstart.admin` | Admin features and detailed error messages |
 
-## Installation
+---
 
-1. Download the latest release JAR
+## 📦 Installation
+
+1. Download the latest release JAR from the [Releases](https://github.com/muzlik-gm/SMP_Start/releases) page
 2. Place it in your server's `plugins` folder
 3. Restart your server
 4. Configure settings using `/smp config`
 
-## Configuration
+---
+
+## ⚙️ Configuration
 
 Settings are grouped into sections in `config.yml`:
 
@@ -134,7 +154,9 @@ phases:
     disable-mob-damage: false
 ```
 
-## How It Works
+---
+
+## 🔄 How It Works
 
 1. **Setup**: Configure your desired settings using `/smp config`
 2. **Start**: Use `/smp start` to begin the countdown
@@ -142,26 +164,41 @@ phases:
 4. **Launch**: At zero, the border expands and the SMP officially begins
 5. **Cooldown**: The command is disabled for the cooldown period
 
-## Requirements
+---
+
+## 📋 Requirements
 
 - Minecraft Server 1.19+
 - Java 17+
 - Bukkit / Spigot / Paper
 
-## Building
+---
+
+## 🛠️ Building from Source
 
 ```bash
+# Clone the repository
 git clone https://github.com/muzlik-gm/SMP_Start.git
 cd SMP_Start
+
+# Build with Maven
 mvn clean package
 ```
 
-The compiled JAR will be in the `target` directory.
+The compiled JAR will be available in the `target` directory.
 
-## License
+---
 
-This project is licensed under the MIT License.
+<div align="center">
 
-## Author
+### 📄 License
 
-Created by **muzlik**
+This project is licensed under the [MIT License](LICENSE).
+
+### 👨‍💻 Author
+
+Created with ❤️ by **muzlik**
+
+![Star History Chart](https://api.star-history.com/svg?repos=muzlik-gm/SMP_Start&type=Date)
+
+</div>
